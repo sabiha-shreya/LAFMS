@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Registration</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Create Account</h1>
+
+    <form action="register.php" method="POST" autocomplete="on">
+
+        <input type="text" name="full_name" placeholder="Full Name" autocomplete="name" required>
+        <br><br>
+
+        <input type="text" name="student_id" placeholder="Student ID">
+        <br><br>
+
+        <input type="email" name="email" placeholder="Email Address" autocomplete="email" required>
+        <br><br>
+
+        <input type="text" name="department" placeholder="Department">
+        <br><br>
+
+        <input type="password" name="password" placeholder="Password" autocomplete="new-password" required>
+        <br><br>
+
+        <input type="password" name="confirm_password" placeholder="Confirm Password" autocomplete="new-password" required>
+        <br><br>
+
+        <button type="submit">Register</button>
+
+    </form>
+
+    <br>
+
+    <p>Already have an account?</p>
+    <a href="login.html">Login</a>
+
+</div>
+
+</body>
+</html>
