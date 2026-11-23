@@ -111,9 +111,12 @@ function renderAddLostItem() {
 
 <!-- OPTIONAL IMAGE -->
 <label>Item Picture (Optional)</label><br>
-<input type="file" name="item_image" accept="image/jpeg,image/png,image/webp">
+<input type="file" name="item_image" id="item_image_input" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewImage(event)">
 <br>
-<small>You can upload a picture if you want.</small>
+<small>You can upload a picture if you want (Max 4MB).</small>
+<div id="image_preview_box" style="display:none;margin-top:10px;text-align:center;">
+    <img id="image_preview" src="" alt="Item Preview" style="max-width:200px;max-height:180px;border-radius:10px;border:1px solid #d1d5db;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+</div>
 <br><br>
 
 <button type="submit">Submit</button>
@@ -123,6 +126,29 @@ function renderAddLostItem() {
 
 </form>
 </div>
+<script>
+function previewImage(event) {
+    const file = event.target.files && event.target.files[0];
+    const previewBox = document.getElementById('image_preview_box');
+    const previewImg = document.getElementById('image_preview');
+    if (file) {
+        if (file.size > 4 * 1024 * 1024) {
+            alert('File size exceeds 4MB. Please choose an image under 4MB.');
+            event.target.value = '';
+            previewBox.style.display = 'none';
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImg.src = e.target.result;
+            previewBox.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    } else {
+        previewBox.style.display = 'none';
+    }
+}
+</script>
 </body>
 </html>`;
 }

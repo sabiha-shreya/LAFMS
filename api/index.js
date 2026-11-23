@@ -84,48 +84,31 @@ app.use(cookieSession({
   maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 }));
 
-// Configure file uploads via multer
-const uploadDir = path.join(__dirname, '../uploads');
-const tmpUploadDir = path.join(os.tmpdir(), 'lafms_uploads');
-
-let activeUploadDir = uploadDir;
-try {
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-} catch (e) {
-  if (!fs.existsSync(tmpUploadDir)) {
-    fs.mkdirSync(tmpUploadDir, { recursive: true });
-  }
-  activeUploadDir = tmpUploadDir;
-}
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    let dest = activeUploadDir;
-    try {
-      if (!fs.existsSync(dest)) {
-        fs.mkdirSync(dest, { recursive: true });
-      }
-    } catch (e) {
-      dest = tmpUploadDir;
-      if (!fs.existsSync(dest)) {
-        fs.mkdirSync(dest, { recursive: true });
-      }
-    }
-    cb(null, dest);
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '_' + Math.random().toString(36).substring(2, 8);
-    const ext = path.extname(file.originalname) || '.jpeg';
-    cb(null, uniqueSuffix + ext);
-  }
-});
-
+// Configure file uploads via multer using memoryStorage (100% serverless Vercel read-only filesystem compatible)
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB maximum limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype && (file.mimetype.startsWith('image/') || /\.(jpe?g|png|webp|gif|bmp)$/i.test(file.originalname))) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files (JPEG, PNG, WebP) are allowed!'));
+    }
+  }
 });
+
+// Middleware to safely catch and handle multer errors
+function handleUpload(req, res, next) {
+  upload.single('item_image')(req, res, (err) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return sendAlertRedirect(res, 'File size too large! Maximum image size is 4MB.', 'add-lost-item.php');
+      }
+      return sendAlertRedirect(res, err.message || 'Image upload failed. Please try a different image.', 'add-lost-item.php');
+    }
+    next();
+  });
+}
 
 // Static assets
 app.use(express.static(path.join(__dirname, '../public')));
@@ -133,7 +116,9 @@ app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/css', express.static(path.join(__dirname, '../css')));
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/images', express.static(path.join(__dirname, '../images')));
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+const tmpUploadDir = path.join(os.tmpdir(), 'lafms_uploads');
 if (fs.existsSync(tmpUploadDir)) {
   app.use('/uploads', express.static(tmpUploadDir));
 }
@@ -455,7 +440,7 @@ app.get(['/add-lost-item.php', '/add-lost-item'], requireUser, (req, res) => {
 });
 
 // Add Lost Item POST
-app.post(['/add-lost-item.php', '/add-lost-item'], requireUser, upload.single('item_image'), async (req, res) => {
+app.post(['/add-lost-item.php', '/add-lost-item'], requireUser, handleUpload, async (req, res) => {
   const userId = req.session.user_id;
   const {
     item_name,
@@ -472,7 +457,10 @@ app.post(['/add-lost-item.php', '/add-lost-item'], requireUser, upload.single('i
   }
 
   let itemImage = null;
-  if (req.file) {
+  if (req.file && req.file.buffer) {
+    const mime = req.file.mimetype || 'image/jpeg';
+    itemImage = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
+  } else if (req.file && req.file.filename) {
     itemImage = 'uploads/' + req.file.filename;
   }
 
@@ -506,7 +494,7 @@ app.get(['/add-found-item.php', '/add-found-item'], requireUser, (req, res) => {
 });
 
 // Add Found Item POST
-app.post(['/add-found-item.php', '/add-found-item'], requireUser, upload.single('item_image'), async (req, res) => {
+app.post(['/add-found-item.php', '/add-found-item'], requireUser, handleUpload, async (req, res) => {
   const userId = req.session.user_id;
   const {
     item_name,
@@ -522,7 +510,10 @@ app.post(['/add-found-item.php', '/add-found-item'], requireUser, upload.single(
   }
 
   let itemImage = null;
-  if (req.file) {
+  if (req.file && req.file.buffer) {
+    const mime = req.file.mimetype || 'image/jpeg';
+    itemImage = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
+  } else if (req.file && req.file.filename) {
     itemImage = 'uploads/' + req.file.filename;
   }
 
