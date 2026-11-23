@@ -72,11 +72,20 @@ async function runTests() {
     res = await request('GET', '/login.html');
     assert('GET /login.html returns 200', res.statusCode === 200 && res.body.includes('Login'));
 
+    res = await request('GET', '/login.php');
+    assert('GET /login.php returns the login page', res.statusCode === 200 && res.body.includes('Login'));
+
     res = await request('GET', '/register.html');
     assert('GET /register.html returns 200', res.statusCode === 200 && res.body.includes('Register'));
 
+    res = await request('GET', '/register.php');
+    assert('GET /register.php returns the registration page', res.statusCode === 200 && res.body.includes('Register'));
+
     res = await request('GET', '/admin-login.html');
     assert('GET /admin-login.html returns 200', res.statusCode === 200 && res.body.includes('Admin Login'));
+
+    res = await request('GET', '/admin-login.php');
+    assert('GET /admin-login.php returns the admin login page', res.statusCode === 200 && res.body.includes('Admin Login'));
 
     res = await request('GET', '/dashboard.css');
     assert('GET /dashboard.css returns CSS', res.statusCode === 200 && res.headers['content-type']?.includes('text/css'));

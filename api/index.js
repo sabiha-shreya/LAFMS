@@ -118,14 +118,14 @@ app.get(['/dashboard.css', '/css/dashboard.css'], (req, res) => {
 });
 
 // Static HTML file routes
-app.get(['/login.html', '/login'], (req, res) => {
+app.get(['/login.html', '/login.php', '/login'], (req, res) => {
   if (req.session && req.session.user_id) {
     return res.redirect('/dashboard.php');
   }
   res.sendFile(path.join(__dirname, '../login.html'));
 });
 
-app.get(['/register.html', '/register'], (req, res) => {
+app.get(['/register.html', '/register.php', '/register'], (req, res) => {
   if (req.session && req.session.user_id) {
     return res.redirect('/dashboard.php');
   }
