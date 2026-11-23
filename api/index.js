@@ -44,6 +44,14 @@ const { renderAdminApprovedClaimsView } = require('../views/adminApprovedClaimsV
 
 const app = express();
 
+app.get(['/api-debug', '/api/index.js'], (req, res) => {
+  res.json({
+    url: req.url,
+    originalUrl: req.originalUrl,
+    headers: req.headers
+  });
+});
+
 // Middleware: Normalize URL for Vercel Serverless Function rewrites
 app.use((req, res, next) => {
   const vercelPath = req.headers['x-vercel-original-url'] || req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];
