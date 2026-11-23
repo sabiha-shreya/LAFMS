@@ -384,42 +384,46 @@ app.get(['/dashboard.php', '/dashboard'], requireUser, async (req, res) => {
       WHERE user_id = ? AND is_read = 0 AND receiver = 'user'
     `, [userId]);
 
-    // Recent items
-    const recentLost = await query(`
+    // Approved lost items for dashboard
+    const lost_items = await query(`
       SELECT lost_id, item_name, category, lost_location, lost_date, status, item_image
       FROM lost_items
-      WHERE user_id = ?
-      ORDER BY lost_id DESC
+      WHERE status = 'Approved'
+      ORDER BY lost_date DESC, lost_id DESC
       LIMIT 5
-    `, [userId]);
+    `);
 
-    const recentFound = await query(`
+    // Approved found items for dashboard
+    const found_items = await query(`
       SELECT found_id, item_name, category, found_location, found_date, status, item_image
       FROM found_items
-      WHERE user_id = ?
-      ORDER BY found_id DESC
+      WHERE status = 'Approved'
+      ORDER BY found_date DESC, found_id DESC
       LIMIT 5
-    `, [userId]);
+    `);
 
-    const recentMatches = await query(`
-      SELECT
-        m.match_id,
-        m.match_percentage,
-        m.claim_status,
-        l.item_name AS lost_name,
-        f.item_name AS found_name,
-        l.user_id AS lost_user_id,
-        f.user_id AS found_user_id
-      FROM matches m
-      INNER JOIN lost_items l ON m.lost_id = l.lost_id
-      INNER JOIN found_items f ON m.found_id = f.found_id
-      WHERE (l.user_id = ? OR f.user_id = ?)
-        AND m.match_percentage >= 50
-      ORDER BY m.match_id DESC
+    // Combined recent posts
+    const recent_all_items = await query(`
+      SELECT *
+      FROM (
+        SELECT 'lost' AS item_type, lost_id AS id, item_name, category, lost_location AS location, lost_date AS post_date, item_image
+        FROM lost_items
+        WHERE status = 'Approved'
+        UNION ALL
+        SELECT 'found' AS item_type, found_id AS id, item_name, category, found_location AS location, found_date AS post_date, item_image
+        FROM found_items
+        WHERE status = 'Approved'
+      ) AS recent_posts
+      ORDER BY post_date DESC, id DESC
       LIMIT 5
-    `, [userId, userId]);
+    `);
 
     const html = renderDashboard({
+      full_name: req.session.full_name || 'User',
+      unread_count: notifCount[0]?.total || 0,
+      lost_items,
+      found_items,
+      recent_all_items,
       user: {
         user_id: req.session.user_id,
         full_name: req.session.full_name,
@@ -434,9 +438,8 @@ app.get(['/dashboard.php', '/dashboard'], requireUser, async (req, res) => {
         totalMatches: matchesCount[0]?.total || 0,
         unreadNotifications: notifCount[0]?.total || 0
       },
-      recentLost,
-      recentFound,
-      recentMatches
+      recentLost: lost_items,
+      recentFound: found_items
     });
 
     res.send(html);
