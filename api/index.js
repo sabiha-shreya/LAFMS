@@ -360,7 +360,7 @@ app.get(['/dashboard.php', '/dashboard'], requireUser, async (req, res) => {
       LEFT JOIN lost_items l ON m.lost_id = l.lost_id
       LEFT JOIN found_items f ON m.found_id = f.found_id
       WHERE (l.user_id = ? OR f.user_id = ?)
-        AND m.match_percentage >= 50
+        AND m.match_percentage >= 80
     `, [userId, userId]);
 
     const notifCount = await query(`
@@ -648,7 +648,7 @@ async function runActiveUserMatching(userId) {
       for (const found of approvedFound) {
         if (lost.user_id === found.user_id) continue;
         const scores = calculateMatchScores(lost, found);
-        if (scores.matchPercentage >= 50) {
+        if (scores.matchPercentage >= 80) {
           const existing = await query('SELECT match_id FROM matches WHERE lost_id = ? AND found_id = ? LIMIT 1', [lost.lost_id, found.found_id]);
           if (existing.length === 0) {
             await execute(`
@@ -677,7 +677,7 @@ async function runActiveUserMatching(userId) {
       for (const lost of approvedLost) {
         if (lost.user_id === found.user_id) continue;
         const scores = calculateMatchScores(lost, found);
-        if (scores.matchPercentage >= 50) {
+        if (scores.matchPercentage >= 80) {
           const existing = await query('SELECT match_id FROM matches WHERE lost_id = ? AND found_id = ? LIMIT 1', [lost.lost_id, found.found_id]);
           if (existing.length === 0) {
             await execute(`
@@ -727,26 +727,41 @@ app.get(['/my-matches.php', '/my-matches'], requireUser, async (req, res) => {
         m.status,
         m.created_at,
 
+        l.item_name AS lost_item_name,
         l.item_name AS lost_name,
         l.category AS lost_category,
+        l.description AS lost_description,
         l.lost_location,
         l.lost_date,
+        l.contact_information AS lost_contact_information,
+        l.secret_information AS lost_secret_information,
+        l.secret_information,
         l.item_image AS lost_item_image,
         l.user_id AS lost_user_id,
 
+        f.item_name AS found_item_name,
         f.item_name AS found_name,
         f.category AS found_category,
+        f.description AS found_description,
         f.found_location,
         f.found_date,
+        f.finder_contact_information,
+        f.item_image AS found_item_image,
         f.item_image AS found_image,
         f.user_id AS found_user_id,
 
         u_lost.full_name AS lost_user_name,
+        u_lost.full_name AS requester_name,
         u_lost.email AS lost_user_email,
+        u_lost.email AS requester_email,
         u_lost.student_id AS lost_student_id,
+        u_lost.student_id AS requester_student_id,
+        u_lost.department AS requester_department,
 
         u_found.full_name AS found_user_name,
+        u_found.full_name AS finder_name,
         u_found.email AS found_user_email,
+        u_found.email AS finder_email,
         u_found.student_id AS found_student_id
 
       FROM matches m
@@ -755,7 +770,7 @@ app.get(['/my-matches.php', '/my-matches'], requireUser, async (req, res) => {
       LEFT JOIN users u_lost ON l.user_id = u_lost.user_id
       LEFT JOIN users u_found ON f.user_id = u_found.user_id
       WHERE (l.user_id = ? OR f.user_id = ?)
-        AND m.match_percentage >= 50
+        AND m.match_percentage >= 80
       ORDER BY m.match_id DESC
     `, [userId, userId]);
 
@@ -778,10 +793,14 @@ app.post(['/claim-item.php', '/claim-item'], requireUser, async (req, res) => {
 
   try {
     const matches = await query(`
-      SELECT m.*, l.user_id AS lost_user_id, l.item_name AS lost_item_name, f.user_id AS found_user_id, f.item_name AS found_item_name
+      SELECT m.*,
+        l.user_id AS lost_user_id, l.item_name AS lost_item_name,
+        f.user_id AS found_user_id, f.item_name AS found_item_name,
+        u_lost.full_name AS claimer_name
       FROM matches m
       INNER JOIN lost_items l ON m.lost_id = l.lost_id
       INNER JOIN found_items f ON m.found_id = f.found_id
+      LEFT JOIN users u_lost ON l.user_id = u_lost.user_id
       WHERE m.match_id = ?
       LIMIT 1
     `, [matchId]);
@@ -797,16 +816,17 @@ app.post(['/claim-item.php', '/claim-item'], requireUser, async (req, res) => {
 
     await execute('UPDATE matches SET claim_status = "Pending" WHERE match_id = ?', [matchId]);
 
+    const claimerName = match.claimer_name || 'A student';
     await execute(`
       INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
       VALUES (?, ?, 'New Claim Request', ?, 0, 'user')
     `, [
       match.found_user_id,
       matchId,
-      `A user has requested to claim the item '${match.found_item_name}' that you found.`
+      `${claimerName} has submitted a claim request for your found item '${match.found_item_name}'. Check their claimer details and secret information to accept or reject.`
     ]);
 
-    res.redirect('/my-matches.php');
+    res.send("<script>alert('Claim request sent to the finder! They will review your claim.'); window.location.href='my-matches.php';</script>");
   } catch (err) {
     console.error('Claim item error:', err);
     res.status(500).send('Database Error: ' + escapeHtml(err.message));
@@ -825,10 +845,14 @@ app.post(['/match-action.php', '/match-action'], requireUser, async (req, res) =
 
   try {
     const matches = await query(`
-      SELECT m.*, l.user_id AS lost_user_id, f.user_id AS found_user_id
+      SELECT m.*,
+        l.user_id AS lost_user_id, l.item_name AS lost_item_name,
+        f.user_id AS found_user_id, f.item_name AS found_item_name,
+        u_lost.full_name AS claimer_name
       FROM matches m
       INNER JOIN lost_items l ON m.lost_id = l.lost_id
       INNER JOIN found_items f ON m.found_id = f.found_id
+      LEFT JOIN users u_lost ON l.user_id = u_lost.user_id
       WHERE m.match_id = ?
       LIMIT 1
     `, [matchId]);
@@ -838,10 +862,16 @@ app.post(['/match-action.php', '/match-action'], requireUser, async (req, res) =
 
     if (action === 'claim' && match.lost_user_id === userId) {
       await execute('UPDATE matches SET claim_status = "Pending" WHERE match_id = ?', [matchId]);
+      const claimerName = match.claimer_name || 'A student';
       await execute(`
         INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
-        VALUES (?, ?, 'New Claim Request', 'A user has requested to claim an item matching your found item.', 0, 'user')
-      `, [match.found_user_id, matchId]);
+        VALUES (?, ?, 'New Claim Request', ?, 0, 'user')
+      `, [
+        match.found_user_id,
+        matchId,
+        `${claimerName} has submitted a claim request for your found item '${match.found_item_name}'. Check their claimer details and secret information to accept or reject.`
+      ]);
+      return res.send("<script>alert('Claim request sent to the finder! They will review your claim.'); window.location.href='my-matches.php';</script>");
     } else if (action === 'receive' && match.lost_user_id === userId) {
       let finderStatus = match.finder_status;
       let ownerStatus = 'Received';
@@ -881,33 +911,42 @@ app.get(['/view-claim.php', '/view-claim'], requireUser, async (req, res) => {
       SELECT
         m.*,
         l.item_name AS lost_item_name,
+        l.item_name AS lost_name,
         l.category AS lost_category,
         l.description AS lost_description,
         l.lost_location,
         l.lost_date,
+        l.contact_information AS lost_contact_information,
         l.contact_information AS lost_contact,
+        l.secret_information AS lost_secret_information,
         l.secret_information,
         l.item_image AS lost_item_image,
         l.user_id AS lost_user_id,
 
         f.item_name AS found_item_name,
+        f.item_name AS found_name,
         f.category AS found_category,
         f.description AS found_description,
         f.found_location,
         f.found_date,
         f.finder_contact_information,
         f.item_image AS found_item_image,
+        f.item_image AS found_image,
         f.user_id AS found_user_id,
 
         u_lost.full_name AS requester_name,
         u_lost.student_id AS requester_student_id,
         u_lost.email AS requester_email,
-        u_lost.department AS requester_department
+        u_lost.department AS requester_department,
+
+        u_found.full_name AS finder_name,
+        u_found.email AS finder_email
 
       FROM matches m
       INNER JOIN lost_items l ON m.lost_id = l.lost_id
       INNER JOIN found_items f ON m.found_id = f.found_id
       LEFT JOIN users u_lost ON l.user_id = u_lost.user_id
+      LEFT JOIN users u_found ON f.user_id = u_found.user_id
       WHERE m.match_id = ?
       LIMIT 1
     `, [matchId]);
@@ -917,7 +956,7 @@ app.get(['/view-claim.php', '/view-claim'], requireUser, async (req, res) => {
     }
 
     const csrfToken = getCsrfToken(req);
-    const html = renderViewClaim({ claim: matches[0], currentUserId: req.session.user_id, csrfToken });
+    const html = renderViewClaim({ match: matches[0], claim: matches[0], match_id: matchId, currentUserId: req.session.user_id, csrfToken });
     res.send(html);
   } catch (err) {
     console.error('View claim error:', err);
@@ -936,10 +975,14 @@ app.post(['/approve-claim.php', '/approve-claim'], requireUser, async (req, res)
 
   try {
     const matches = await query(`
-      SELECT m.*, l.user_id AS lost_user_id, l.item_name AS lost_item_name, f.user_id AS found_user_id, f.item_name AS found_item_name
+      SELECT m.*,
+        l.user_id AS lost_user_id, l.item_name AS lost_item_name,
+        f.user_id AS found_user_id, f.item_name AS found_item_name, f.finder_contact_information,
+        u_found.full_name AS finder_name
       FROM matches m
       INNER JOIN lost_items l ON m.lost_id = l.lost_id
       INNER JOIN found_items f ON m.found_id = f.found_id
+      LEFT JOIN users u_found ON f.user_id = u_found.user_id
       WHERE m.match_id = ?
       LIMIT 1
     `, [matchId]);
@@ -957,16 +1000,19 @@ app.post(['/approve-claim.php', '/approve-claim'], requireUser, async (req, res)
     await execute('UPDATE lost_items SET status = "Claim Approved" WHERE lost_id = ?', [match.lost_id]);
     await execute('UPDATE found_items SET status = "Claim Approved" WHERE found_id = ?', [match.found_id]);
 
+    const finderName = match.finder_name || 'The finder';
+    const contactInfo = match.finder_contact_information ? ` Contact them at: ${match.finder_contact_information}.` : '';
+
     await execute(`
       INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
-      VALUES (?, ?, 'Claim Approved', ?, 0, 'user')
+      VALUES (?, ?, 'Claim Request Accepted!', ?, 0, 'user')
     `, [
       match.lost_user_id,
       matchId,
-      `Your claim for '${match.lost_item_name}' has been approved by the finder.`
+      `Great news! Your claim request for '${match.lost_item_name}' was accepted by ${finderName}.${contactInfo}`
     ]);
 
-    res.redirect(`/approved-claim-details.php?match_id=${matchId}`);
+    res.send("<script>alert('Claim request accepted! The claimer has been notified.'); window.location.href='approved-claim-details.php?match_id=" + matchId + "';</script>");
   } catch (err) {
     console.error('Approve claim error:', err);
     res.status(500).send('Database Error: ' + escapeHtml(err.message));
@@ -984,10 +1030,14 @@ app.post(['/reject-claim.php', '/reject-claim'], requireUser, async (req, res) =
 
   try {
     const matches = await query(`
-      SELECT m.*, l.user_id AS lost_user_id, l.item_name AS lost_item_name, f.user_id AS found_user_id, f.item_name AS found_item_name
+      SELECT m.*,
+        l.user_id AS lost_user_id, l.item_name AS lost_item_name,
+        f.user_id AS found_user_id, f.item_name AS found_item_name,
+        u_found.full_name AS finder_name
       FROM matches m
       INNER JOIN lost_items l ON m.lost_id = l.lost_id
       INNER JOIN found_items f ON m.found_id = f.found_id
+      LEFT JOIN users u_found ON f.user_id = u_found.user_id
       WHERE m.match_id = ?
       LIMIT 1
     `, [matchId]);
@@ -1005,14 +1055,14 @@ app.post(['/reject-claim.php', '/reject-claim'], requireUser, async (req, res) =
 
     await execute(`
       INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
-      VALUES (?, ?, 'Claim Rejected', ?, 0, 'user')
+      VALUES (?, ?, 'Claim Request Rejected', ?, 0, 'user')
     `, [
       match.lost_user_id,
       matchId,
-      `Your claim for '${match.lost_item_name}' was not approved by the finder.`
+      `Your claim request for '${match.lost_item_name}' was rejected by the finder.`
     ]);
 
-    res.redirect('/my-matches.php');
+    res.send("<script>alert('Claim request rejected. The claimer has been notified.'); window.location.href='my-matches.php';</script>");
   } catch (err) {
     console.error('Reject claim error:', err);
     res.status(500).send('Database Error: ' + escapeHtml(err.message));
@@ -1096,10 +1146,11 @@ app.get(['/notifications.php', '/notifications'], requireUser, async (req, res) 
 
   try {
     const notifications = await query(`
-      SELECT *
-      FROM notifications
-      WHERE user_id = ? AND receiver = 'user'
-      ORDER BY notification_id DESC
+      SELECT n.*, m.claim_status
+      FROM notifications n
+      LEFT JOIN matches m ON n.match_id = m.match_id
+      WHERE n.user_id = ? AND n.receiver = 'user'
+      ORDER BY n.notification_id DESC
     `, [userId]);
 
     const unread = notifications.filter(n => n.is_read === 0 || n.is_read === '0').length;

@@ -24,15 +24,14 @@ function renderMyMatches({ matches, user_id }) {
     if (isOwner) {
       if (claimStatus === 'Not Claimed') {
         actionHtml = `
-          <form action="match-action.php" method="POST">
+          <form action="claim-item.php" method="POST" style="display:inline-block;">
             <input type="hidden" name="match_id" value="${matchId}">
-            <input type="hidden" name="action" value="claim">
-            <button type="submit" class="action-button claim-button">📢 Claim Item</button>
+            <button type="submit" class="action-button claim-button">📢 Send Claim Request</button>
           </form>`;
       } else if (claimStatus === 'Pending') {
-        actionHtml = `<span class="waiting-text">⏳ Claim Request Sent</span>`;
+        actionHtml = `<span class="waiting-text">⏳ Claim Request Sent (Waiting for Finder)</span>`;
       } else if (claimStatus === 'Rejected') {
-        actionHtml = `<span class="status-badge rejected">✗ Claim Rejected</span>`;
+        actionHtml = `<span class="status-badge rejected">✗ Claim Rejected by Finder</span>`;
       } else if (claimStatus === 'Approved') {
         if (ownerStatus === 'received') {
           actionHtml = `
@@ -43,20 +42,24 @@ function renderMyMatches({ matches, user_id }) {
             <form action="match-action.php" method="POST" style="display:inline-block;">
               <input type="hidden" name="match_id" value="${matchId}">
               <input type="hidden" name="action" value="received">
-              <button type="submit" class="action-button receive-button">📦 Receive</button>
+              <button type="submit" class="action-button receive-button">📦 Confirm Item Received</button>
             </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
+            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
         }
       }
     } else if (isFinder) {
       if (claimStatus === 'Not Claimed') {
-        actionHtml = `<span class="status-badge not-claimed">○ Not Claimed</span>`;
+        actionHtml = `
+          <span class="status-badge not-claimed">○ No Claim Request Yet</span>
+          <a href="view-claim.php?match_id=${matchId}" class="action-button" style="background:#2563eb;">👤 View Claimer Data & Secret Info</a>`;
       } else if (claimStatus === 'Pending') {
         actionHtml = `
-          <span class="status-badge pending">⏳ Claim Pending</span>
-          <a href="view-claim.php?match_id=${matchId}" class="action-button claim-button">Review Claim</a>`;
+          <span class="status-badge pending">⏳ Claim Request Received!</span>
+          <a href="view-claim.php?match_id=${matchId}" class="action-button claim-button" style="background:#0d9488;">🔍 Review Claim & Secret Info</a>`;
       } else if (claimStatus === 'Rejected') {
-        actionHtml = `<span class="status-badge rejected">✗ Claim Rejected</span>`;
+        actionHtml = `
+          <span class="status-badge rejected">✗ Claim Rejected</span>
+          <a href="view-claim.php?match_id=${matchId}" class="action-button" style="background:#475569;">View Details</a>`;
       } else if (claimStatus === 'Approved') {
         if (finderStatus === 'give back') {
           actionHtml = `
@@ -67,9 +70,9 @@ function renderMyMatches({ matches, user_id }) {
             <form action="match-action.php" method="POST" style="display:inline-block;">
               <input type="hidden" name="match_id" value="${matchId}">
               <input type="hidden" name="action" value="given_back">
-              <button type="submit" class="action-button give-button">🤝 Give Back</button>
+              <button type="submit" class="action-button give-button">🤝 Confirm Given Back</button>
             </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
+            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
         }
       }
     }
@@ -87,39 +90,61 @@ function renderMyMatches({ matches, user_id }) {
       claimBadge = `<span class="status-badge pending">${escapeHtml(claimStatus)}</span>`;
     }
 
+    const lostName = row.lost_item_name || row.lost_name || 'Lost Item';
+    const foundName = row.found_item_name || row.found_name || 'Found Item';
+
     return `
       <div class="match-card">
         <div class="match-top">
           <div class="match-id">
-            Match ID: <strong>${matchId}</strong>
-            ${isOwner ? '<span class="role-badge owner-role">👤 Owner</span>' : ''}
-            ${isFinder ? '<span class="role-badge finder-role">🔎 Finder</span>' : ''}
+            Match ID: <strong>#${matchId}</strong>
+            ${isOwner ? '<span class="role-badge owner-role">👤 You are Owner</span>' : ''}
+            ${isFinder ? '<span class="role-badge finder-role">🔎 You are Finder</span>' : ''}
           </div>
           <div class="match-percentage">
             ⭐ ${percentage}% Match
           </div>
         </div>
 
+        <div class="score-breakdown" style="margin-bottom:18px;background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;font-size:12px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+          <span style="font-weight:bold;color:#334155;">Match Breakdown:</span>
+          <span><strong>Name (40%):</strong> ${escapeHtml(row.item_name_score || 0)}%</span>
+          <span>•</span>
+          <span><strong>Category (25%):</strong> ${escapeHtml(row.category_score || 0)}%</span>
+          <span>•</span>
+          <span><strong>Location (25%):</strong> ${escapeHtml(row.location_score || 0)}%</span>
+          <span>•</span>
+          <span><strong>Date (10%):</strong> ${escapeHtml(row.date_score || 0)}%</span>
+        </div>
+
         <div class="items-grid">
           <!-- LOST ITEM -->
           <div class="item-box lost-box">
             <div class="item-label lost-label">🔴 LOST ITEM</div>
-            <h2>${escapeHtml(row.lost_item_name)}</h2>
+            <h2>${escapeHtml(lostName)}</h2>
             ${lostImageHtml}
             <div class="info-row"><span class="info-label">Category:</span> <span class="info-value">${escapeHtml(row.lost_category)}</span></div>
             <div class="info-row"><span class="info-label">Lost Date:</span> <span class="info-value">${escapeHtml(row.lost_date)}</span></div>
             <div class="info-row"><span class="info-label">Location:</span> <span class="info-value">${escapeHtml(row.lost_location)}</span></div>
-            <div class="info-row"><span class="info-label">Description:</span> <span class="info-value">${escapeHtml(row.lost_description || 'N/A')}</span></div>
+            
+            <div class="description-card" style="margin-top:12px;padding:12px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;">
+              <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#dc2626;display:block;margin-bottom:4px;">Lost Item Description</span>
+              <p style="margin:0;font-size:13px;color:#1e293b;line-height:1.5;white-space:pre-wrap;">${escapeHtml(row.lost_description || 'No description provided')}</p>
+            </div>
           </div>
 
           <!-- FOUND ITEM -->
           <div class="item-box found-box">
             <div class="item-label found-label">🟢 FOUND ITEM</div>
-            <h2>${escapeHtml(row.found_item_name)}</h2>
+            <h2>${escapeHtml(foundName)}</h2>
             <div class="info-row"><span class="info-label">Category:</span> <span class="info-value">${escapeHtml(row.found_category)}</span></div>
             <div class="info-row"><span class="info-label">Found Date:</span> <span class="info-value">${escapeHtml(row.found_date)}</span></div>
             <div class="info-row"><span class="info-label">Location:</span> <span class="info-value">${escapeHtml(row.found_location)}</span></div>
-            <div class="info-row"><span class="info-label">Description:</span> <span class="info-value">${escapeHtml(row.found_description || 'N/A')}</span></div>
+            
+            <div class="description-card" style="margin-top:12px;padding:12px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;">
+              <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#059669;display:block;margin-bottom:4px;">Found Item Description</span>
+              <p style="margin:0;font-size:13px;color:#1e293b;line-height:1.5;white-space:pre-wrap;">${escapeHtml(row.found_description || 'No description provided')}</p>
+            </div>
           </div>
         </div>
 
