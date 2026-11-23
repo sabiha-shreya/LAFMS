@@ -56,7 +56,7 @@ app.use((req, res, next) => {
       req.url = '/' + pathParam + (remainingQuery ? '?' + remainingQuery : '');
       return next();
     }
-  } catch (err) {}
+  } catch (err) { }
 
   // 2. Check headers
   const vercelPath = req.headers['x-vercel-original-url'] || req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];

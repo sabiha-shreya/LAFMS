@@ -113,11 +113,14 @@ function renderDashboard({ full_name, unread_count, lost_items, found_items, rec
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campus Lost & Found Management System</title>
+    <script src="js/tailwind.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <script src="js/lucide.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -389,7 +392,9 @@ function renderDashboard({ full_name, unread_count, lost_items, found_items, rec
 </div>
 
 <script>
-    lucide.createIcons();
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
 
     const mobileMenuButton = document.getElementById('mobileMenuButton');
     const mobileSidebar = document.getElementById('mobileSidebar');

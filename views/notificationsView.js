@@ -78,7 +78,9 @@ function renderNotifications({ notifications, unread_count }) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications</title>
+    <script src="js/tailwind.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/lucide.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -100,7 +102,9 @@ function renderNotifications({ notifications, unread_count }) {
 </div>
 
 <script>
-lucide.createIcons();
+if (window.lucide && typeof lucide.createIcons === 'function') {
+    lucide.createIcons();
+}
 
 function markAsRead(notificationId) {
     fetch("mark-notification-read.php", {

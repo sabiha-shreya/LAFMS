@@ -10,7 +10,9 @@ function renderApprovedClaimDetails({ match, match_id, is_admin, is_owner, is_fi
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Approved Claim Details</title>
+    <script src="js/tailwind.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/lucide.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
@@ -186,7 +188,9 @@ function renderApprovedClaimDetails({ match, match_id, is_admin, is_owner, is_fi
 </div>
 
 <script>
-    lucide.createIcons();
+    if (window.lucide && typeof lucide.createIcons === 'function') {
+        lucide.createIcons();
+    }
 </script>
 </body>
 </html>`;
