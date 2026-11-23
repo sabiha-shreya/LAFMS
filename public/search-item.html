@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Search Item</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Search Item</h1>
+
+    <form action="search-item.php" method="POST">
+
+    <!-- Item Name -->
+    <input type="text" 
+    name="item_name"
+    placeholder="Item Name (Example: Mobile, ID Card, Watch)">
+    <br><br>
+
+
+    <!-- Category -->
+    <select name="category">
+        <option value="">Select Category</option>
+        <option>Electronics</option>
+        <option>Documents</option>
+        <option>Accessories</option>
+        <option>Books or Stationery</option>
+        <option>Others</option>
+    </select>
+
+    <br><br>
+
+
+    <!-- Status -->
+    <select name="status">
+        <option value="">Select Status</option>
+        <option value="All">All</option>
+        <option value="Lost">Lost</option>
+        <option value="Found">Found</option>
+    </select>
+
+    <br><br>
+
+
+    <!-- Search Button -->
+    <button type="submit" name="search">Search</button>
+
+    </form>
+
+
+    <br><br>
+
+    <a href="dashboard.php">Back to Dashboard</a>
+
+
+</div>
+
+</body>
+
+</html>

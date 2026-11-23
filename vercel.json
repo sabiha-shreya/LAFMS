@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/index.js": {
-      "includeFiles": "{css,images,js,uploads}/**/*"
+      "includeFiles": "{public,css,images,js,uploads,node_modules/sql.js/dist,lib}/**/*"
     }
   },
   "rewrites": [

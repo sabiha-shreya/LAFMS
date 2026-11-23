@@ -1,0 +1,672 @@
+<?php
+session_start();
+include "db.php";
+
+/* ==========================================
+   LOGIN CHECK
+========================================== */
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
+$user_id = $_SESSION['user_id'];
+$full_name = $_SESSION['full_name'] ?? 'Samiul Islam';
+$department = $_SESSION['department'] ?? 'CSE, 2nd Year';
+
+/* ==========================================
+   UNREAD NOTIFICATION COUNT
+========================================== */
+$unread_count = 3;
+if (isset($conn)) {
+    $unread_res = $conn->query("SELECT COUNT(*) AS unread_count FROM notifications WHERE user_id = '$user_id' AND receiver = 'user' AND is_read = 0");
+    if ($unread_res) {
+        $unread_data = $unread_res->fetch_assoc();
+        $unread_count = $unread_data['unread_count'] ?? 3;
+    }
+}
+
+/* ==========================================
+   GET USER NOTIFICATIONS
+========================================== */
+$notifications = [];
+if (isset($conn)) {
+    $notif_res = $conn->query("SELECT notification_id, match_id, title, message, is_read, created_at FROM notifications WHERE user_id = '$user_id' AND receiver = 'user' ORDER BY created_at DESC LIMIT 10");
+    if ($notif_res) {
+        while ($row = $notif_res->fetch_assoc()) {
+            $notifications[] = $row;
+        }
+    }
+}
+
+/* ==========================================
+   RECENT LOST POSTS
+========================================== */
+$lost_items = [];
+if (isset($conn)) {
+    $lost_result = $conn->query("SELECT * FROM lost_items ORDER BY lost_date DESC, lost_id DESC LIMIT 5");
+    if ($lost_result && $lost_result->num_rows > 0) {
+        while ($row = $lost_result->fetch_assoc()) {
+            $lost_items[] = $row;
+        }
+    }
+}
+
+/* ==========================================
+   RECENT FOUND POSTS
+========================================== */
+$found_items = [];
+if (isset($conn)) {
+    $found_result = $conn->query("SELECT * FROM found_items ORDER BY found_date DESC, found_id DESC LIMIT 5");
+    if ($found_result && $found_result->num_rows > 0) {
+        while ($row = $found_result->fetch_assoc()) {
+            $found_items[] = $row;
+        }
+    }
+}
+
+/* ==========================================
+   RECENT ALL POSTS (MIDDLE COLUMN)
+========================================== */
+$recent_all_items = [];
+if (isset($conn)) {
+    $recent_all_sql = "
+        (SELECT 'lost' as item_type, lost_id as id, item_name, category, lost_location as location, lost_date as post_date FROM lost_items)
+        UNION ALL
+        (SELECT 'found' as item_type, found_id as id, item_name, category, found_location as location, found_date as post_date FROM found_items)
+        ORDER BY post_date DESC, id DESC LIMIT 5
+    ";
+    $recent_all_result = $conn->query($recent_all_sql);
+    if ($recent_all_result && $recent_all_result->num_rows > 0) {
+        while ($row = $recent_all_result->fetch_assoc()) {
+            $recent_all_items[] = $row;
+        }
+    }
+}
+
+// Fallback dummy items matching the image exactly
+if (empty($lost_items)) {
+    $lost_items = [
+        ['lost_id'=>1, 'item_name'=>'Black Wallet', 'lost_location'=>'Library, Building 2', 'lost_date'=>'2025-05-30'],
+        ['lost_id'=>2, 'item_name'=>'University ID Card', 'lost_location'=>'Main Gate', 'lost_date'=>'2025-05-28'],
+        ['lost_id'=>3, 'item_name'=>'Headphones', 'lost_location'=>'Cafeteria', 'lost_date'=>'2025-05-27'],
+        ['lost_id'=>4, 'item_name'=>'Math Textbook', 'lost_location'=>'Room 301', 'lost_date'=>'2025-05-26'],
+        ['lost_id'=>5, 'item_name'=>'Silver Watch', 'lost_location'=>'Playground', 'lost_date'=>'2025-05-25']
+    ];
+}
+
+if (empty($recent_all_items)) {
+    $recent_all_items = [
+        ['id'=>1, 'item_type'=>'found', 'item_name'=>'Water Bottle', 'location'=>'Cafeteria', 'post_date'=>'2025-05-29'],
+        ['id'=>2, 'item_type'=>'found', 'item_name'=>'Key with Keychain', 'location'=>'Parking Area', 'post_date'=>'2025-05-28'],
+        ['id'=>3, 'item_type'=>'found', 'item_name'=>'Black Umbrella', 'location'=>'Library, Floor 1', 'post_date'=>'2025-05-27'],
+        ['id'=>4, 'item_type'=>'found', 'item_name'=>'Power Bank', 'location'=>'Lab 404', 'post_date'=>'2025-05-26'],
+        ['id'=>5, 'item_type'=>'found', 'item_name'=>'Blue Notebook', 'location'=>'Seminar Room', 'post_date'=>'2025-05-25']
+    ];
+}
+
+if (empty($found_items)) {
+    $found_items = [
+        ['found_id'=>1, 'item_name'=>'Water Bottle', 'found_location'=>'Cafeteria', 'found_date'=>'2025-05-29'],
+        ['found_id'=>2, 'item_name'=>'Key with Keychain', 'found_location'=>'Parking Area', 'found_date'=>'2025-05-28'],
+        ['found_id'=>3, 'item_name'=>'Black Umbrella', 'found_location'=>'Library, Floor 1', 'found_date'=>'2025-05-27'],
+        ['found_id'=>4, 'item_name'=>'Power Bank', 'found_location'=>'Lab 404', 'found_date'=>'2025-05-26'],
+        ['found_id'=>5, 'item_name'=>'Blue Notebook', 'found_location'=>'Seminar Room', 'found_date'=>'2025-05-25']
+    ];
+}
+
+// 100% In-Code Vector Art for Every Item
+function getItemGraphic($name) {
+    $name = strtolower($name);
+    
+    // Black Wallet
+    if (strpos($name, 'wallet') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="3" y="8" width="30" height="20" rx="4" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+            <path d="M3 13 L33 13" stroke="#334155" stroke-width="1.5"/>
+            <rect x="20" y="14" width="13" height="8" rx="2" fill="#334155" stroke="#475569" stroke-width="1"/>
+            <circle cx="23.5" cy="18" r="1.5" fill="#fbbf24"/>
+        </svg>';
+    }
+    // University ID Card
+    if (strpos($name, 'id') !== false || strpos($name, 'card') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="3" y="7" width="30" height="22" rx="3" fill="#ffffff" stroke="#93c5fd" stroke-width="1.5"/>
+            <rect x="3" y="7" width="30" height="6" fill="#0284c7"/>
+            <rect x="6" y="16" width="7" height="9" rx="1.5" fill="#93c5fd"/>
+            <circle cx="9.5" cy="19.5" r="2" fill="#1e3a8a"/>
+            <rect x="16" y="16" width="14" height="2" rx="1" fill="#475569"/>
+            <rect x="16" y="20" width="10" height="2" rx="1" fill="#94a3b8"/>
+            <rect x="16" y="24" width="7" height="1.5" rx="0.75" fill="#cbd5e1"/>
+        </svg>';
+    }
+    // Headphones
+    if (strpos($name, 'headphone') !== false || strpos($name, 'earphone') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <path d="M7 19 C7 11 11.5 6 18 6 C24.5 6 29 11 29 19" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+            <rect x="4.5" y="17" width="6" height="12" rx="3" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="25.5" y="17" width="6" height="12" rx="3" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+        </svg>';
+    }
+    // Math Textbook
+    if (strpos($name, 'book') !== false || strpos($name, 'math') !== false || strpos($name, 'textbook') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="7" y="5" width="22" height="26" rx="3" fill="#d97706" stroke="#b45309" stroke-width="1.5"/>
+            <rect x="7" y="5" width="4.5" height="26" rx="1" fill="#92400e"/>
+            <rect x="14" y="10" width="12" height="5" rx="1" fill="#fef3c7"/>
+            <path d="M17 18 L23 18 M20 15 L20 21" stroke="#78350f" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>';
+    }
+    // Silver Watch
+    if (strpos($name, 'watch') !== false || strpos($name, 'clock') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="14.5" y="2" width="7" height="32" rx="2" fill="#64748b"/>
+            <circle cx="18" cy="18" r="9" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
+            <circle cx="18" cy="18" r="6.5" fill="#ffffff"/>
+            <path d="M18 13.5 L18 18 L21.5 18" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>';
+    }
+    // Water Bottle
+    if (strpos($name, 'bottle') !== false || strpos($name, 'water') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="15" y="3" width="6" height="5" rx="1.5" fill="#0f766e"/>
+            <rect x="12" y="8" width="12" height="24" rx="4" fill="#06b6d4" stroke="#0891b2" stroke-width="1.5"/>
+            <rect x="12" y="15" width="12" height="8" fill="#0891b2" opacity="0.3"/>
+            <path d="M14 11 L22 11" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>';
+    }
+    // Key with Keychain
+    if (strpos($name, 'key') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <circle cx="14" cy="13" r="5.5" fill="#f59e0b" stroke="#b45309" stroke-width="1.5"/>
+            <circle cx="14" cy="13" r="2.5" fill="#ffffff"/>
+            <path d="M17.5 16.5 L27 26 L24.5 28.5 M22 23 L25.5 22 M24.5 25.5 L28 24.5" stroke="#b45309" stroke-width="2" stroke-linecap="round"/>
+            <rect x="5" y="20" width="9" height="12" rx="2.5" fill="#ea580c" stroke="#c2410c" stroke-width="1" transform="rotate(25 8 22)"/>
+        </svg>';
+    }
+    // Black Umbrella
+    if (strpos($name, 'umbrella') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <path d="M4 19 C4 11 10 6 18 6 C26 6 32 11 32 19 Z" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+            <line x1="18" y1="6" x2="18" y2="27" stroke="#475569" stroke-width="2"/>
+            <path d="M18 27 C18 29.5 16 31 14 29" stroke="#475569" stroke-width="2" stroke-linecap="round" fill="none"/>
+        </svg>';
+    }
+    // Power Bank
+    if (strpos($name, 'power') !== false || strpos($name, 'battery') !== false || strpos($name, 'phone') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="9" y="5" width="18" height="26" rx="3.5" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+            <circle cx="13" cy="10" r="1.2" fill="#22c55e"/>
+            <circle cx="16.5" cy="10" r="1.2" fill="#22c55e"/>
+            <circle cx="20" cy="10" r="1.2" fill="#22c55e"/>
+            <circle cx="23.5" cy="10" r="1.2" fill="#64748b"/>
+        </svg>';
+    }
+    // Blue Notebook
+    if (strpos($name, 'notebook') !== false || strpos($name, 'khata') !== false) {
+        return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none">
+            <rect x="7" y="5" width="22" height="26" rx="3.5" fill="#2563eb" stroke="#1d4ed8" stroke-width="1.5"/>
+            <circle cx="8.5" cy="8.5" r="1.5" fill="#f8fafc"/>
+            <circle cx="8.5" cy="14" r="1.5" fill="#f8fafc"/>
+            <circle cx="8.5" cy="19.5" r="1.5" fill="#f8fafc"/>
+            <circle cx="8.5" cy="25" r="1.5" fill="#f8fafc"/>
+            <rect x="13" y="10" width="11" height="3" rx="1" fill="#ffffff" opacity="0.85"/>
+        </svg>';
+    }
+    return '<svg class="w-7 h-7" viewBox="0 0 36 36" fill="none"><polygon points="18,4 32,11 18,18 4,11" fill="#0d9488"/><polygon points="4,11 18,18 18,32 4,25" fill="#0f766e"/><polygon points="32,11 18,18 18,32 32,25" fill="#115e59"/></svg>';
+}
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Lost & Found Management System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="flex h-screen overflow-hidden text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
+
+  <!-- ==========================================
+       1. SIDEBAR (Deep Dark Teal #003844)
+  =========================================== -->
+  <aside class="w-64 bg-[#003844] text-white flex flex-col justify-between p-5 shrink-0 hidden lg:flex select-none">
+    <div>
+      <!-- Brand Logo (Campus Lost & Found) -->
+      <div class="flex items-center gap-3.5 mb-8 px-1">
+        <div class="w-11 h-11 rounded-2xl bg-teal-800/50 border border-teal-400/40 flex items-center justify-center text-teal-300 shadow-[0_0_15px_rgba(20,184,166,0.2)]">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+            <path d="M3 6h18"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+            <circle cx="12" cy="14" r="2.5" fill="currentColor"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="font-extrabold text-[15px] tracking-wider text-white uppercase leading-none">CAMPUS</h1>
+          <p class="text-[10.5px] text-teal-300/90 font-bold tracking-wider mt-1">LOST & FOUND</p>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="space-y-1.5 font-semibold text-sm">
+        <a href="dashboard.php" class="flex items-center gap-3.5 px-4 py-3 bg-[#0fa4af] text-white rounded-xl shadow-md transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-white"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="add-lost-item.php" class="flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add Lost Item</span>
+        </a>
+        <a href="add-found-item.php" class="flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+          <i data-lucide="plus-square" class="w-4 h-4"></i>
+          <span>Add Found Item</span>
+        </a>
+        <a href="search-item.html" class="flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span>Search Item</span>
+        </a>
+        <a href="view-items.php" class="flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+          <i data-lucide="clipboard-list" class="w-4 h-4"></i>
+          <span>View All Items</span>
+        </a>
+        <a href="my-matches.php" class="flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+          <i data-lucide="heart" class="w-4 h-4"></i>
+          <span>My Matches</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Bottom Illustration (Cardboard box with items & night skyline) -->
+    <div class="pt-4 text-center">
+      <div class="relative mx-auto w-36 h-32 flex items-center justify-center">
+        <svg viewBox="0 0 160 140" class="w-36 h-auto drop-shadow-xl">
+          <path d="M5 85 L5 45 L20 45 L20 85 M25 85 L25 30 L50 30 L50 85 M55 85 L55 50 L80 50 L80 85 M85 85 L85 35 L110 35 L110 85 M115 85 L115 55 L140 55 L140 85 M145 85 L145 65 L155 65 L155 85" fill="#002b36" opacity="0.7"/>
+          <circle cx="20" cy="65" r="1" fill="#2dd4bf" opacity="0.8"/>
+          <circle cx="85" cy="45" r="1.5" fill="#2dd4bf" opacity="0.9"/>
+          <circle cx="135" cy="60" r="1" fill="#2dd4bf" opacity="0.7"/>
+          <polygon points="35,75 80,95 125,75 80,55" fill="#d97706" opacity="0.85"/>
+          <rect x="48" y="32" width="30" height="38" rx="7" fill="#0284c7" transform="rotate(-12 60 50)"/>
+          <path d="M56 32 C56 22 72 22 72 32" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <rect x="55" y="48" width="16" height="14" rx="3" fill="#0369a1" transform="rotate(-12 60 50)"/>
+          <rect x="76" y="36" width="24" height="34" rx="4" fill="#b45309" transform="rotate(18 85 50)"/>
+          <circle cx="86" cy="50" r="2.5" fill="#fbbf24"/>
+          <circle cx="112" cy="72" r="5" fill="#cbd5e1"/>
+          <path d="M112 77 L120 85 L117 88 M118 82 L121 85" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/>
+          <polygon points="35,75 80,95 80,122 35,102" fill="#b45309"/>
+          <polygon points="125,75 80,95 80,122 125,102" fill="#92400e"/>
+        </svg>
+      </div>
+      <p class="text-xs text-teal-200/90 font-normal leading-relaxed italic mt-1">
+        "Let's help return<br>what truly matters."
+      </p>
+      <div class="mt-3">
+        <a href="logout.php" class="text-xs text-rose-300 hover:text-rose-200 bg-rose-950/40 border border-rose-800/40 px-3 py-1 rounded-lg transition inline-flex items-center gap-1.5 font-semibold">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Logout
+        </a>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ==========================================
+       2. MAIN CONTENT WRAPPER
+  =========================================== -->
+  <div class="flex-1 flex flex-col h-screen overflow-y-auto">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-slate-200/80 px-7 py-3.5 flex justify-between items-center sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+      <div class="flex items-center gap-4">
+        <button class="lg:hidden text-slate-600 hover:text-slate-900 focus:outline-none">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+        <h2 class="font-bold text-slate-800 text-base md:text-[17px]">
+          Campus Lost & Found Management System
+        </h2>
+      </div>
+
+      <!-- Right: Notifications & Profile -->
+      <div class="flex items-center gap-6">
+        <div class="relative cursor-pointer p-1.5 hover:bg-slate-100 rounded-full transition" onclick="toggleNotifs()">
+          <i data-lucide="bell" class="w-5 h-5 text-slate-700"></i>
+          <?php if ($unread_count > 0): ?>
+            <span class="absolute top-0 right-0 bg-[#22c55e] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ring-2 ring-white">
+              <?php echo $unread_count; ?>
+            </span>
+          <?php endif; ?>
+        </div>
+
+        <div class="flex items-center gap-3 cursor-pointer group">
+          <div class="w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center">
+            <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80" alt="Avatar" class="w-full h-full object-cover">
+          </div>
+          <div class="hidden sm:block text-left">
+            <p class="text-xs font-bold text-slate-800 leading-snug group-hover:text-teal-700 transition">
+              <?php echo htmlspecialchars($full_name); ?>
+            </p>
+            <p class="text-[11px] text-slate-400 font-medium leading-none">
+              <?php echo htmlspecialchars($department); ?>
+            </p>
+          </div>
+          <i data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition"></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- Notification Dropdown Panel -->
+    <div id="notifPanel" class="hidden fixed top-16 right-8 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 p-4 max-h-[75vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b pb-2.5 mb-3">
+        <h4 class="font-bold text-xs text-slate-800 flex items-center gap-2">
+          <i data-lucide="bell" class="w-4 h-4 text-teal-600"></i> Notifications
+        </h4>
+        <span class="text-[10px] bg-teal-50 text-teal-700 font-bold px-2 py-0.5 rounded-full border border-teal-200">
+          <?php echo $unread_count; ?> New
+        </span>
+      </div>
+      <div class="space-y-2">
+        <?php if (!empty($notifications)): ?>
+          <?php foreach ($notifications as $n): ?>
+            <div class="p-2.5 rounded-xl border text-xs <?php echo $n['is_read'] == 0 ? 'bg-teal-50/40 border-teal-200' : 'bg-slate-50 border-slate-100'; ?>">
+              <p class="font-bold text-slate-800"><?php echo htmlspecialchars($n['title']); ?></p>
+              <p class="text-slate-600 text-[11px] mt-0.5"><?php echo htmlspecialchars($n['message']); ?></p>
+              <p class="text-[10px] text-slate-400 mt-1"><?php echo date('d M Y, h:i A', strtotime($n['created_at'])); ?></p>
+            </div>
+          <?php endforeach; ?>
+        <?php else: ?>
+          <p class="text-xs text-slate-400 text-center py-4">No notifications yet.</p>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="p-6 md:p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto">
+
+      <!-- ========================================
+           1. WELCOME HERO BANNER (Green Backpack, Camera, Wallet, Book, Bottle)
+      ========================================= -->
+      <div class="relative overflow-hidden bg-gradient-to-r from-[#eafaf1] via-[#ebfaef] to-[#d8f3dc] border border-emerald-200/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between shadow-[0_2px_10px_rgba(16,185,129,0.06)]">
+        <div class="relative z-10 space-y-1 max-w-md">
+          <h1 class="text-2xl sm:text-[25px] font-extrabold text-slate-900 tracking-tight">
+            Welcome back, <?php echo htmlspecialchars($full_name); ?>! 👋
+          </h1>
+          <p class="text-xs sm:text-sm text-slate-600 font-medium leading-relaxed">
+            Let's help each other by reuniting lost items with their owners.
+          </p>
+        </div>
+
+        <!-- Banner Right Illustration Artwork -->
+        <div class="hidden md:flex items-center gap-3 relative z-10 shrink-0">
+          <svg class="w-84 h-32 drop-shadow-md" viewBox="0 0 340 120" fill="none">
+            <path d="M30 90 Q10 45 35 40 Q50 60 30 90 Z" fill="#22c55e" opacity="0.85"/>
+            <path d="M50 95 Q30 50 55 45 Q70 65 50 95 Z" fill="#16a34a" opacity="0.95"/>
+            <path d="M280 95 Q305 50 285 45 Q270 65 280 95 Z" fill="#16a34a" opacity="0.85"/>
+            <path d="M300 90 Q325 45 305 40 Q290 60 300 90 Z" fill="#22c55e" opacity="0.75"/>
+
+            <!-- Green Backpack -->
+            <rect x="110" y="24" width="52" height="68" rx="16" fill="#0f766e" stroke="#134e4a" stroke-width="2"/>
+            <rect x="118" y="52" width="36" height="30" rx="8" fill="#115e59"/>
+            <path d="M126 24 C126 10 146 10 146 24" stroke="#134e4a" stroke-width="5" stroke-linecap="round" fill="none"/>
+            <rect x="132" y="64" width="8" height="4" rx="2" fill="#2dd4bf"/>
+
+            <!-- Brown Leather Wallet -->
+            <rect x="80" y="65" width="34" height="26" rx="6" fill="#78350f" stroke="#451a03" stroke-width="1.5" transform="rotate(-12 85 70)"/>
+            <circle cx="90" cy="79" r="3" fill="#fbbf24"/>
+
+            <!-- Black & Silver DSLR Camera -->
+            <rect x="175" y="58" width="42" height="30" rx="7" fill="#1e293b" stroke="#0f172a" stroke-width="1.5"/>
+            <rect x="175" y="58" width="42" height="8" rx="4" fill="#94a3b8"/>
+            <circle cx="196" cy="73" r="9.5" fill="#475569"/>
+            <circle cx="196" cy="73" r="6" fill="#0f172a"/>
+            <circle cx="194" cy="71" r="2" fill="#ffffff" opacity="0.8"/>
+            <rect x="202" y="54" width="9" height="5" rx="1.5" fill="#475569"/>
+
+            <!-- Open Yellow Notebook -->
+            <polygon points="228,64 248,70 268,64 268,90 248,96 228,90" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/>
+            <path d="M248 70 L248 96" stroke="#ca8a04" stroke-width="2"/>
+
+            <!-- Cyan Water Bottle -->
+            <rect x="284" y="36" width="20" height="54" rx="6" fill="#0284c7" stroke="#0369a1" stroke-width="1.5"/>
+            <rect x="289" y="27" width="10" height="10" rx="3" fill="#0369a1"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- ========================================
+           2. 5 QUICK ACTION CARDS (Blue Bag, Green Bag, Search, Clipboard, Heart)
+      ========================================= -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        
+        <!-- 1. Add Lost Item (Blue Bag with ?) -->
+        <a href="add-lost-item.php" class="bg-[#eff6ff] hover:bg-[#e0f0fe] border border-[#bfdbfe]/80 hover:border-blue-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group">
+          <div class="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-200 relative">
+            <svg class="w-7 h-7 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+              <path d="M3 6h18"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span class="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ring-2 ring-white">?</span>
+          </div>
+          <h3 class="font-bold text-xs text-slate-800">Add Lost Item</h3>
+          <p class="text-[10.5px] text-slate-500 font-medium mt-0.5">Report your lost item</p>
+        </a>
+
+        <!-- 2. Add Found Item (Green Bag with ✓) -->
+        <a href="add-found-item.php" class="bg-[#ecfdf5] hover:bg-[#d1fae5] border border-[#a7f3d0]/80 hover:border-emerald-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group">
+          <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-200 relative">
+            <svg class="w-7 h-7 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+              <path d="M3 6h18"/>
+              <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <span class="absolute -bottom-1 -right-1 bg-emerald-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ring-2 ring-white">✓</span>
+          </div>
+          <h3 class="font-bold text-xs text-slate-800">Add Found Item</h3>
+          <p class="text-[10.5px] text-slate-500 font-medium mt-0.5">Report found item</p>
+        </a>
+
+        <!-- 3. Search Item (Amber Magnifying Glass) -->
+        <a href="search-item.html" class="bg-[#fffbeb] hover:bg-[#fef3c7] border border-[#fde68a]/80 hover:border-amber-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group">
+          <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-200">
+            <svg class="w-7 h-7 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-xs text-slate-800">Search Item</h3>
+          <p class="text-[10.5px] text-slate-500 font-medium mt-0.5">Search lost & found items</p>
+        </a>
+
+        <!-- 4. View All Items (Purple Clipboard) -->
+        <a href="view-items.php" class="bg-[#f5f3ff] hover:bg-[#ede9fe] border border-[#ddd6fe]/80 hover:border-purple-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group">
+          <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-200">
+            <svg class="w-7 h-7 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-xs text-slate-800">View All Items</h3>
+          <p class="text-[10.5px] text-slate-500 font-medium mt-0.5">View all lost & found items</p>
+        </a>
+
+        <!-- 5. My Matches (Red Heart) -->
+        <a href="my-matches.php" class="bg-[#fff1f2] hover:bg-[#ffe4e6] border border-[#fecdd3]/80 hover:border-rose-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group col-span-2 sm:col-span-1">
+          <div class="w-12 h-12 rounded-xl bg-rose-100 flex items-center justify-center mb-2 group-hover:scale-110 transition duration-200">
+            <svg class="w-7 h-7 text-rose-500 fill-rose-500" viewBox="0 0 24 24">
+              <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+            </svg>
+          </div>
+          <h3 class="font-bold text-xs text-slate-800">My Matches</h3>
+          <p class="text-[10.5px] text-slate-500 font-medium mt-0.5">Items that might match</p>
+        </a>
+
+      </div>
+
+      <!-- ========================================
+           3. 3-COLUMN RECENT POSTS FEEDS
+      ========================================= -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+        <!-- COLUMN 1: Recent Lost Posts -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div>
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                <svg class="w-5 h-5 text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>
+                </svg>
+                <span>Recent Lost Posts</span>
+              </div>
+              <a href="view-items.php?type=lost" class="text-xs font-bold text-rose-600 hover:underline">View All</a>
+            </div>
+
+            <div class="space-y-3.5">
+              <?php foreach ($lost_items as $item): ?>
+                <div class="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-inner">
+                      <?php echo getItemGraphic($item['item_name']); ?>
+                    </div>
+                    <div class="truncate">
+                      <h4 class="text-xs font-bold text-slate-800 truncate"><?php echo htmlspecialchars($item['item_name']); ?></h4>
+                      <p class="text-[10.5px] text-slate-400 font-medium truncate mt-0.5">
+                        <?php echo htmlspecialchars($item['lost_location']); ?> • <?php echo date('d M Y', strtotime($item['lost_date'])); ?>
+                      </p>
+                    </div>
+                  </div>
+                  <a href="view-post.php?type=lost&id=<?php echo $item['lost_id']; ?>" class="shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition">
+                    View
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-slate-100 text-center">
+            <a href="view-items.php?type=lost" class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 transition">
+              View All Lost Posts <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: Recent Posts (Mixed) -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div>
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                <svg class="w-5 h-5 text-amber-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
+                <span>Recent Posts</span>
+              </div>
+              <a href="view-items.php" class="text-xs font-bold text-amber-600 hover:underline">View All</a>
+            </div>
+
+            <div class="space-y-3.5">
+              <?php foreach ($recent_all_items as $item): ?>
+                <div class="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-inner">
+                      <?php echo getItemGraphic($item['item_name']); ?>
+                    </div>
+                    <div class="truncate">
+                      <h4 class="text-xs font-bold text-slate-800 truncate"><?php echo htmlspecialchars($item['item_name']); ?></h4>
+                      <p class="text-[10.5px] text-slate-400 font-medium truncate mt-0.5">
+                        <?php echo htmlspecialchars($item['location']); ?> • <?php echo date('d M Y', strtotime($item['post_date'])); ?>
+                      </p>
+                    </div>
+                  </div>
+                  <a href="view-post.php?type=<?php echo $item['item_type'] ?? 'lost'; ?>&id=<?php echo $item['id']; ?>" class="shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition">
+                    View
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-slate-100 text-center">
+            <a href="view-items.php" class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition">
+              View All Recent Posts <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- COLUMN 3: Recent Found Posts -->
+        <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition">
+          <div>
+            <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
+              <div class="flex items-center gap-2 text-slate-800 font-bold text-sm">
+                <svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+                <span>Recent Found Posts</span>
+              </div>
+              <a href="view-items.php?type=found" class="text-xs font-bold text-emerald-600 hover:underline">View All</a>
+            </div>
+
+            <div class="space-y-3.5">
+              <?php foreach ($found_items as $item): ?>
+                <div class="flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-center shrink-0 shadow-inner">
+                      <?php echo getItemGraphic($item['item_name']); ?>
+                    </div>
+                    <div class="truncate">
+                      <h4 class="text-xs font-bold text-slate-800 truncate"><?php echo htmlspecialchars($item['item_name']); ?></h4>
+                      <p class="text-[10.5px] text-slate-400 font-medium truncate mt-0.5">
+                        <?php echo htmlspecialchars($item['found_location']); ?> • <?php echo date('d M Y', strtotime($item['found_date'])); ?>
+                      </p>
+                    </div>
+                  </div>
+                  <a href="view-post.php?type=found&id=<?php echo $item['found_id']; ?>" class="shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition">
+                    View
+                  </a>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          </div>
+
+          <div class="mt-5 pt-3 border-t border-slate-100 text-center">
+            <a href="view-items.php?type=found" class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition">
+              View All Found Posts <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <footer class="text-center text-xs text-slate-400 py-6 font-medium">
+        © 2025 Campus Lost & Found Management System. All rights reserved.
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    function toggleNotifs() {
+      const p = document.getElementById('notifPanel');
+      p.classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>
+<?php
+if (isset($conn)) {
+    $conn->close();
+}
+?>

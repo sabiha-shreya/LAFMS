@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pending Posts</title>
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Pending Posts</h1>
+    <p>Posts waiting for admin approval.</p>
+
+
+    <table border="1" width="100%" cellpadding="10">
+
+        <tr>
+            <th>ID</th>
+            <th>Item Name</th>
+            <th>Category</th>
+            <th>Posted By</th>
+            <th>Date</th>
+            <th>Secret Information</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+
+
+        <tr>
+            <td>1</td>
+            <td>Black Wallet</td>
+            <td>Accessories</td>
+            <td>Student</td>
+            <td>24 July 2026</td>
+            <td>Blue card inside</td>
+            <td>Pending</td>
+
+            <td>
+                <button onclick="approvePost()">Approve</button>
+                <button onclick="rejectPost()">Reject</button>
+            </td>
+        </tr>
+
+
+    </table>
+
+
+    <br>
+
+    <a href="admin-dashboard.html" class="btn">
+        Back to Dashboard
+    </a>
+
+</div>
+
+
+<script>
+
+function approvePost()
+{
+    alert("Post Approved");
+}
+
+
+function rejectPost()
+{
+    alert("Post Rejected");
+}
+
+</script>
+
+
+</body>
+</html>

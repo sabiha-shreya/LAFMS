@@ -44,6 +44,22 @@ const { renderAdminApprovedClaimsView } = require('../views/adminApprovedClaimsV
 
 const app = express();
 
+// Middleware: Normalize URL for Vercel Serverless Function rewrites
+app.use((req, res, next) => {
+  const vercelPath = req.headers['x-vercel-original-url'] || req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];
+  if (vercelPath && vercelPath !== '/api/index.js' && vercelPath !== '/api/index' && vercelPath !== '/api') {
+    try {
+      const parsedUrl = new URL(vercelPath, `http://${req.headers.host || 'localhost'}`);
+      req.url = parsedUrl.pathname + parsedUrl.search;
+    } catch (e) {
+      req.url = vercelPath;
+    }
+  } else if (req.url === '/api/index.js' || req.url === '/api/index' || req.url === '/api') {
+    req.url = '/';
+  }
+  next();
+});
+
 // Configure body parsing
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(express.json({ limit: '10mb' }));
@@ -99,20 +115,37 @@ const upload = multer({
 });
 
 // Static assets
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/css', express.static(path.join(__dirname, '../css')));
+app.use('/images', express.static(path.join(__dirname, '../public/images')));
 app.use('/images', express.static(path.join(__dirname, '../images')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 if (fs.existsSync(tmpUploadDir)) {
   app.use('/uploads', express.static(tmpUploadDir));
 }
+app.use('/js', express.static(path.join(__dirname, '../public/js')));
 app.use('/js', express.static(path.join(__dirname, '../js')));
+
+// Helper to resolve HTML or static file from public/ or root
+function getStaticFilePath(filename) {
+  const inPublic = path.join(__dirname, '../public', filename);
+  if (fs.existsSync(inPublic)) return inPublic;
+  return path.join(__dirname, '..', filename);
+}
 
 // Direct CSS route alias for dashboard.css (linked as href="dashboard.css")
 app.get(['/dashboard.css', '/css/dashboard.css'], (req, res) => {
-  const cssPath = path.join(__dirname, '../css/dashboard.css');
-  if (fs.existsSync(cssPath)) {
-    res.setHeader('Content-Type', 'text/css');
-    return res.sendFile(cssPath);
+  const cssPaths = [
+    path.join(__dirname, '../public/dashboard.css'),
+    path.join(__dirname, '../public/css/dashboard.css'),
+    path.join(__dirname, '../css/dashboard.css')
+  ];
+  for (const p of cssPaths) {
+    if (fs.existsSync(p)) {
+      res.setHeader('Content-Type', 'text/css');
+      return res.sendFile(p);
+    }
   }
   res.status(404).send('');
 });
@@ -122,40 +155,40 @@ app.get(['/login.html', '/login.php', '/login'], (req, res) => {
   if (req.session && req.session.user_id) {
     return res.redirect('/dashboard.php');
   }
-  res.sendFile(path.join(__dirname, '../login.html'));
+  res.sendFile(getStaticFilePath('login.html'));
 });
 
 app.get(['/register.html', '/register.php', '/register'], (req, res) => {
   if (req.session && req.session.user_id) {
     return res.redirect('/dashboard.php');
   }
-  res.sendFile(path.join(__dirname, '../register.html'));
+  res.sendFile(getStaticFilePath('register.html'));
 });
 
 app.get(['/admin-login.html', '/admin-login.php', '/admin-login'], (req, res) => {
   if (req.session && req.session.admin_username) {
     return res.redirect('/admin-dashboard.php');
   }
-  res.sendFile(path.join(__dirname, '../admin-login.html'));
+  res.sendFile(getStaticFilePath('admin-login.html'));
 });
 
 app.get('/search-item.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../search-item.html'));
+  res.sendFile(getStaticFilePath('search-item.html'));
 });
 
 app.get('/dashboard-preview.html', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dashboard-preview.html'));
+  res.sendFile(getStaticFilePath('dashboard-preview.html'));
 });
 
 // Root path handler
-app.get('/', (req, res) => {
+app.get(['/', '/index.html'], (req, res) => {
   if (req.session && req.session.user_id) {
     return res.redirect('/dashboard.php');
   }
   if (req.session && req.session.admin_username) {
     return res.redirect('/admin-dashboard.php');
   }
-  res.sendFile(path.join(__dirname, '../login.html'));
+  res.sendFile(getStaticFilePath('login.html'));
 });
 
 // Helper for sending PHP-style script alerts

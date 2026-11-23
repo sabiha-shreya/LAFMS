@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Login | Campus Lost & Found</title>
+
+    <!-- Common CSS -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body class="login-page">
+
+    <div class="login-container">
+
+        <h1>Login</h1>
+
+        <form action="login.php" method="POST" autocomplete="on">
+
+            <input
+                type="text"
+                name="email"
+                placeholder="Student ID or Email"
+                autocomplete="username"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Password"
+                autocomplete="current-password"
+                required
+            >
+
+            <button type="submit">
+                Login
+            </button>
+
+        </form>
+
+        <p>Don't have an account?</p>
+
+        <a href="register.html">
+            Register
+        </a>
+
+    </div>
+
+</body>
+
+</html>

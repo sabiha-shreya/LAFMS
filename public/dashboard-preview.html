@@ -1,0 +1,494 @@
+﻿<!DOCTYPE html>
+<html lang=en>
+<head>
+  <meta charset=UTF-8>
+  <meta name=viewport content=width=device-width, initial-scale=1.0>
+  <title>Campus Lost & Found Management System</title>
+  <!-- Tailwind CSS CDN -->
+  <script src=https://cdn.tailwindcss.com></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel=preconnect href=https://fonts.googleapis.com>
+  <link rel=preconnect href=https://fonts.gstatic.com crossorigin>
+  <link href=https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap rel=stylesheet>
+  <!-- Lucide Icons -->
+  <script src=https://unpkg.com/lucide@latest></script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f8fafc;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class=flex h-screen overflow-hidden text-slate-800 antialiased selection:bg-teal-500 selection:text-white>
+
+  <!-- SIDEBAR -->
+  <aside class=w-64 bg-[#003844] text-white flex flex-col justify-between p-5 shrink-0 hidden lg:flex select-none>
+    <div>
+      <!-- Brand Logo -->
+      <div class=flex items-center gap-3.5 mb-8 px-1>
+        <div class=w-11 h-11 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-teal-300 shadow-inner>
+          <svg class=w-6 h-6 viewBox=0 0 24 24 fill=none stroke=currentColor stroke-width=2 stroke-linecap=round stroke-linejoin=round>
+            <path d=M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z/>
+            <path d=M3 6h18/>
+            <path d=M16 10a4 4 0 0 1-8 0/>
+            <circle cx=12 cy=14 r=2/>
+          </svg>
+        </div>
+        <div>
+          <h1 class=font-extrabold text-[15px] tracking-wider text-white uppercase leading-none>CAMPUS</h1>
+          <p class=text-[10.5px] text-teal-200/90 font-medium tracking-wide mt-1>LOST & FOUND</p>
+        </div>
+      </div>
+
+      <!-- Nav Links -->
+      <nav class=space-y-1.5 font-semibold text-sm>
+        <a href=# class=flex items-center gap-3.5 px-4 py-3 bg-[#0fa4af] text-white rounded-xl shadow-sm transition duration-150>
+          <i data-lucide=layout-dashboard class=w-4 h-4 text-white></i>
+          <span>Dashboard</span>
+        </a>
+        <a href=add-lost-item.html class=flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition duration-150>
+          <i data-lucide=plus-circle class=w-4 h-4></i>
+          <span>Add Lost Item</span>
+        </a>
+        <a href=add-found-item.html class=flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition duration-150>
+          <i data-lucide=plus-square class=w-4 h-4></i>
+          <span>Add Found Item</span>
+        </a>
+        <a href=search-item.html class=flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition duration-150>
+          <i data-lucide=search class=w-4 h-4></i>
+          <span>Search Item</span>
+        </a>
+        <a href=view-items.html class=flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition duration-150>
+          <i data-lucide=clipboard-list class=w-4 h-4></i>
+          <span>View All Items</span>
+        </a>
+        <a href=my-matches.html class=flex items-center gap-3.5 px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition duration-150>
+          <i data-lucide=heart class=w-4 h-4></i>
+          <span>My Matches</span>
+        </a>
+      </nav>
+    </div>
+
+    <!-- Sidebar Bottom Illustration & Quote -->
+    <div class=pt-4 text-center>
+      <div class=relative mx-auto w-36 h-28 flex items-center justify-center>
+        <svg viewBox=0 0 160 120 class=w-32 h-auto drop-shadow-md>
+          <path d=M10 75 L10 40 L25 40 L25 75 M30 75 L30 25 L55 25 L55 75 M60 75 L60 45 L85 45 L85 75 M90 75 L90 30 L115 30 L115 75 M120 75 L120 50 L145 50 L145 75 fill=#002b36 opacity=0.6/>
+          <polygon points=35,75 80,95 125,75 80,55 fill=#d97706 opacity=0.8/>
+          <rect x=52 y=38 width=26 height=32 rx=5 fill=#0284c7 transform=rotate(-12 60 50)/>
+          <path d=M57 38 C57 30 73 30 73 38 stroke=#38bdf8 stroke-width=2.5 fill=none/>
+          <rect x=76 y=40 width=22 height=30 rx=3 fill=#b45309 transform=rotate(18 85 50)/>
+          <circle cx=108 cy=70 r=5 fill=#cbd5e1/>
+          <polygon points=35,75 80,95 80,118 35,98 fill=#b45309/>
+          <polygon points=125,75 80,95 80,118 125,98 fill=#92400e/>
+        </svg>
+      </div>
+      <p class=text-xs text-teal-200/90 font-normal leading-relaxed italic mt-1>
+        Let's help return<br>what truly matters.
+      </p>
+    </div>
+  </aside>
+
+  <!-- MAIN WRAPPER -->
+  <div class=flex-1 flex flex-col h-screen overflow-y-auto>
+
+    <!-- Top Navigation Header -->
+    <header class=bg-white border-b border-slate-200/80 px-7 py-3.5 flex justify-between items-center sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.03)]>
+      <div class=flex items-center gap-4>
+        <button class=text-slate-600 hover:text-slate-900 focus:outline-none>
+          <i data-lucide=menu class=w-5 h-5></i>
+        </button>
+        <h2 class=font-bold text-slate-800 text-base md:text-[17px]>
+          Campus Lost & Found Management System
+        </h2>
+      </div>
+
+      <!-- Right: Notifications & Profile -->
+      <div class=flex items-center gap-6>
+        <div class=relative cursor-pointer p-1.5 hover:bg-slate-100 rounded-full transition>
+          <i data-lucide=bell class=w-5 h-5 text-slate-700></i>
+          <span class=absolute top-0 right-0 bg-[#22c55e] text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold ring-2 ring-white>
+            3
+          </span>
+        </div>
+
+        <div class=flex items-center gap-3 cursor-pointer group>
+          <div class=w-9 h-9 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center>
+            <img src=https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=120&auto=format&fit=crop&q=80 alt=Avatar class=w-full h-full object-cover>
+          </div>
+          <div class=hidden sm:block text-left>
+            <p class=text-xs font-bold text-slate-800 leading-snug group-hover:text-teal-700 transition>
+              Samiul Islam
+            </p>
+            <p class=text-[11px] text-slate-400 font-medium leading-none>
+              CSE, 2nd Year
+            </p>
+          </div>
+          <i data-lucide=chevron-down class=w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition></i>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class=p-6 md:p-8 space-y-6 flex-1 max-w-7xl w-full mx-auto>
+
+      <!-- 1. WELCOME HERO BANNER -->
+      <div class=relative overflow-hidden bg-gradient-to-r from-[#eafaf1] via-[#ebfaef] to-[#d8f3dc] border border-emerald-200/80 rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between shadow-[0_2px_10px_rgba(16,185,129,0.06)]>
+        <div class=relative z-10 space-y-1 max-w-lg>
+          <h1 class=text-2xl sm:text-[25px] font-extrabold text-slate-900 tracking-tight>
+            Welcome back, Samiul Islam! 👋
+          </h1>
+          <p class=text-xs sm:text-sm text-slate-600 font-medium leading-relaxed>
+            Let's help each other by reuniting lost items with their owners.
+          </p>
+        </div>
+
+        <div class=hidden md:flex items-center gap-3 relative z-10>
+          <svg class=w-72 h-24 viewBox=0 0 300 100 fill=none>
+            <path d=M0 90 Q 60 40, 140 75 T 300 60 L300 100 L0 100 Z fill=#bbf7d0 opacity=0.4/>
+            <path d=M40 70 Q 25 35, 45 30 Q 55 50, 40 70 Z fill=#22c55e opacity=0.7/>
+            <path d=M260 75 Q 275 40, 255 35 Q 245 55, 260 75 Z fill=#16a34a opacity=0.7/>
+            <rect x=85 y=25 width=40 height=52 rx=12 fill=#0d9488/>
+            <rect x=93 y=45 width=24 height=22 rx=6 fill=#115e59/>
+            <path d=M98 25 C98 15 112 15 112 25 stroke=#134e4a stroke-width=4 stroke-linecap=round fill=none/>
+            <rect x=70 y=55 width=26 height=22 rx=4 fill=#78350f transform=rotate(-10 75 60)/>
+            <rect x=140 y=50 width=34 height=26 rx=6 fill=#334155/>
+            <circle cx=157 cy=63 r=7 fill=#64748b/>
+            <circle cx=157 cy=63 r=4 fill=#0f172a/>
+            <polygon points=185,55 200,60 215,55 215,75 200,80 185,75 fill=#fef08a/>
+            <path d=M200 60 L200 80 stroke=#ca8a04 stroke-width=1.5/>
+            <rect x=235 y=32 width=16 height=45 rx=5 fill=#0284c7/>
+            <rect x=238 y=25 width=10 height=8 rx=2 fill=#0369a1/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- 2. QUICK ACTION CARDS -->
+      <div class=grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5>
+        <a href=add-lost-item.html class=bg-[#eff6ff] hover:bg-[#e0f0fe] border border-[#bfdbfe]/80 hover:border-blue-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group>
+          <div class=w-11 h-11 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-inner>
+            <i data-lucide=shopping-bag class=w-5 h-5></i>
+          </div>
+          <h3 class=font-bold text-xs text-slate-800>Add Lost Item</h3>
+          <p class=text-[10.5px] text-slate-500 font-medium mt-0.5>Report your lost item</p>
+        </a>
+
+        <a href=add-found-item.html class=bg-[#ecfdf5] hover:bg-[#d1fae5] border border-[#a7f3d0]/80 hover:border-emerald-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group>
+          <div class=w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-inner>
+            <i data-lucide=package-check class=w-5 h-5></i>
+          </div>
+          <h3 class=font-bold text-xs text-slate-800>Add Found Item</h3>
+          <p class=text-[10.5px] text-slate-500 font-medium mt-0.5>Report found item</p>
+        </a>
+
+        <a href=search-item.html class=bg-[#fffbeb] hover:bg-[#fef3c7] border border-[#fde68a]/80 hover:border-amber-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group>
+          <div class=w-11 h-11 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-inner>
+            <i data-lucide=search class=w-5 h-5></i>
+          </div>
+          <h3 class=font-bold text-xs text-slate-800>Search Item</h3>
+          <p class=text-[10.5px] text-slate-500 font-medium mt-0.5>Search lost & found items</p>
+        </a>
+
+        <a href=view-items.html class=bg-[#f5f3ff] hover:bg-[#ede9fe] border border-[#ddd6fe]/80 hover:border-purple-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group>
+          <div class=w-11 h-11 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-inner>
+            <i data-lucide=clipboard-list class=w-5 h-5></i>
+          </div>
+          <h3 class=font-bold text-xs text-slate-800>View All Items</h3>
+          <p class=text-[10.5px] text-slate-500 font-medium mt-0.5>View all lost & found items</p>
+        </a>
+
+        <a href=my-matches.html class=bg-[#fff1f2] hover:bg-[#ffe4e6] border border-[#fecdd3]/80 hover:border-rose-300 p-4 rounded-2xl text-center transition duration-200 shadow-sm hover:shadow-md flex flex-col items-center group col-span-2 sm:col-span-1>
+          <div class=w-11 h-11 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-inner>
+            <i data-lucide=heart class=w-5 h-5 fill-rose-500 text-rose-500></i>
+          </div>
+          <h3 class=font-bold text-xs text-slate-800>My Matches</h3>
+          <p class=text-[10.5px] text-slate-500 font-medium mt-0.5>Items that might match</p>
+        </a>
+      </div>
+
+      <!-- 3. 3-COLUMN RECENT POSTS FEEDS -->
+      <div class=grid grid-cols-1 md:grid-cols-3 gap-6>
+
+        <!-- COLUMN 1: Recent Lost Posts -->
+        <div class=bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition>
+          <div>
+            <div class=flex justify-between items-center mb-4 pb-3 border-b border-slate-100>
+              <div class=flex items-center gap-2 text-slate-800 font-bold text-sm>
+                <div class=w-6 h-6 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center>
+                  <i data-lucide=shopping-bag class=w-3.5 h-3.5></i>
+                </div>
+                <span>Recent Lost Posts</span>
+              </div>
+              <a href=# class=text-xs font-bold text-rose-600 hover:underline>View All</a>
+            </div>
+
+            <div class=space-y-3.5>
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=wallet class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Black Wallet</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Library, Building 2 • 30 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=id-card class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>University ID Card</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Main Gate • 28 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=headphones class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Headphones</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Cafeteria • 27 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=book-open class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Math Textbook</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Room 301 • 26 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=watch class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Silver Watch</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Playground • 25 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-rose-600 border border-rose-200 rounded-lg hover:bg-rose-50 transition>View</a>
+              </div>
+            </div>
+          </div>
+
+          <div class=mt-5 pt-3 border-t border-slate-100 text-center>
+            <a href=# class=inline-flex items-center gap-1.5 text-xs font-bold text-rose-600 hover:text-rose-700 transition>
+              View All Lost Posts <i data-lucide=arrow-right class=w-3.5 h-3.5></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- COLUMN 2: Recent Posts (Mixed) -->
+        <div class=bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition>
+          <div>
+            <div class=flex justify-between items-center mb-4 pb-3 border-b border-slate-100>
+              <div class=flex items-center gap-2 text-slate-800 font-bold text-sm>
+                <div class=w-6 h-6 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center>
+                  <i data-lucide=bell class=w-3.5 h-3.5></i>
+                </div>
+                <span>Recent Posts</span>
+              </div>
+              <a href=# class=text-xs font-bold text-amber-600 hover:underline>View All</a>
+            </div>
+
+            <div class=space-y-3.5>
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=cup-soda class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Water Bottle</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Cafeteria • 29 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=key-round class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Key with Keychain</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Parking Area • 28 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=umbrella class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Black Umbrella</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Library, Floor 1 • 27 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=smartphone class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Power Bank</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Lab 404 • 26 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=book class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Blue Notebook</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Seminar Room • 25 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-amber-600 border border-amber-200 rounded-lg hover:bg-amber-50 transition>View</a>
+              </div>
+            </div>
+          </div>
+
+          <div class=mt-5 pt-3 border-t border-slate-100 text-center>
+            <a href=# class=inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition>
+              View All Recent Posts <i data-lucide=arrow-right class=w-3.5 h-3.5></i>
+            </a>
+          </div>
+        </div>
+
+        <!-- COLUMN 3: Recent Found Posts -->
+        <div class=bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm flex flex-col justify-between hover:shadow-md transition>
+          <div>
+            <div class=flex justify-between items-center mb-4 pb-3 border-b border-slate-100>
+              <div class=flex items-center gap-2 text-slate-800 font-bold text-sm>
+                <div class=w-6 h-6 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center>
+                  <i data-lucide=gift class=w-3.5 h-3.5></i>
+                </div>
+                <span>Recent Found Posts</span>
+              </div>
+              <a href=# class=text-xs font-bold text-emerald-600 hover:underline>View All</a>
+            </div>
+
+            <div class=space-y-3.5>
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=cup-soda class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Water Bottle</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Cafeteria • 29 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=key-round class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Key with Keychain</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Parking Area • 28 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=umbrella class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Black Umbrella</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Library, Floor 1 • 27 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=smartphone class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Power Bank</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Lab 404 • 26 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition>View</a>
+              </div>
+
+              <div class=flex items-center justify-between p-1.5 rounded-xl hover:bg-slate-50 transition>
+                <div class=flex items-center gap-3 min-w-0>
+                  <div class=w-10 h-10 rounded-xl bg-slate-100 border border-slate-200/70 flex items-center justify-center text-slate-700 shrink-0>
+                    <i data-lucide=book class=w-4 h-4></i>
+                  </div>
+                  <div class=truncate>
+                    <h4 class=text-xs font-bold text-slate-800 truncate>Blue Notebook</h4>
+                    <p class=text-[10.5px] text-slate-400 font-medium truncate mt-0.5>Seminar Room • 25 May 2025</p>
+                  </div>
+                </div>
+                <a href=# class=shrink-0 text-xs font-bold px-3 py-1 text-emerald-600 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition>View</a>
+              </div>
+            </div>
+          </div>
+
+          <div class=mt-5 pt-3 border-t border-slate-100 text-center>
+            <a href=# class=inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition>
+              View All Found Posts <i data-lucide=arrow-right class=w-3.5 h-3.5></i>
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Footer -->
+      <footer class=text-center text-xs text-slate-400 py-6 font-medium>
+        © 2025 Campus Lost & Found Management System. All rights reserved.
+      </footer>
+
+    </main>
+  </div>
+
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
