@@ -44,16 +44,21 @@ const { renderAdminApprovedClaimsView } = require('../views/adminApprovedClaimsV
 
 const app = express();
 
-app.get(['/api-debug', '/api/index.js'], (req, res) => {
-  res.json({
-    url: req.url,
-    originalUrl: req.originalUrl,
-    headers: req.headers
-  });
-});
-
 // Middleware: Normalize URL for Vercel Serverless Function rewrites
 app.use((req, res, next) => {
+  // 1. Check if Vercel passed the path via rewrite query param ?__path=...
+  try {
+    const urlObj = new URL(req.url, 'http://localhost');
+    const pathParam = urlObj.searchParams.get('__path');
+    if (pathParam !== null && pathParam !== undefined) {
+      urlObj.searchParams.delete('__path');
+      const remainingQuery = urlObj.searchParams.toString();
+      req.url = '/' + pathParam + (remainingQuery ? '?' + remainingQuery : '');
+      return next();
+    }
+  } catch (err) {}
+
+  // 2. Check headers
   const vercelPath = req.headers['x-vercel-original-url'] || req.headers['x-matched-path'] || req.headers['x-forwarded-uri'];
   if (vercelPath && vercelPath !== '/api/index.js' && vercelPath !== '/api/index' && vercelPath !== '/api') {
     try {
