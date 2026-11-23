@@ -6,9 +6,6 @@ node_modules/
 .env.local
 .env.*.local
 
-# Uploaded files (ephemeral on Vercel)
-uploads/
-
 # SQLite database files (if any persist locally)
 *.db
 *.sqlite
