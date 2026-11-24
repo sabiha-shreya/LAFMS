@@ -641,8 +641,8 @@ app.all(['/search-item.php', '/search-item'], async (req, res) => {
 // Helper function: run matching logic for active user items against approved items
 async function runActiveUserMatching(userId) {
   try {
-    const userLost = await query('SELECT * FROM lost_items WHERE user_id = ? AND status IN ("Approved", "Pending")', [userId]);
-    const approvedFound = await query('SELECT * FROM found_items WHERE status = "Approved"');
+    const userLost = await query("SELECT * FROM lost_items WHERE user_id = ? AND status IN ('Approved', 'Pending')", [userId]);
+    const approvedFound = await query("SELECT * FROM found_items WHERE status = 'Approved'");
 
     for (const lost of userLost) {
       for (const found of approvedFound) {
@@ -670,8 +670,8 @@ async function runActiveUserMatching(userId) {
       }
     }
 
-    const userFound = await query('SELECT * FROM found_items WHERE user_id = ? AND status IN ("Approved", "Pending")', [userId]);
-    const approvedLost = await query('SELECT * FROM lost_items WHERE status = "Approved"');
+    const userFound = await query("SELECT * FROM found_items WHERE user_id = ? AND status IN ('Approved', 'Pending')", [userId]);
+    const approvedLost = await query("SELECT * FROM lost_items WHERE status = 'Approved'");
 
     for (const found of userFound) {
       for (const lost of approvedLost) {
@@ -1006,9 +1006,9 @@ app.post(['/approve-claim.php', '/approve-claim'], requireUser, async (req, res)
       return res.status(403).send('Only the finder can approve this claim.');
     }
 
-    await execute('UPDATE matches SET claim_status = "Approved" WHERE match_id = ?', [matchId]);
-    await execute('UPDATE lost_items SET status = "Claim Approved" WHERE lost_id = ?', [match.lost_id]);
-    await execute('UPDATE found_items SET status = "Claim Approved" WHERE found_id = ?', [match.found_id]);
+    await execute("UPDATE matches SET claim_status = 'Approved' WHERE match_id = ?", [matchId]);
+    await execute("UPDATE lost_items SET status = 'Claim Approved' WHERE lost_id = ?", [match.lost_id]);
+    await execute("UPDATE found_items SET status = 'Claim Approved' WHERE found_id = ?", [match.found_id]);
 
     const finderName = match.finder_name || 'The finder';
     const contactInfo = match.finder_contact_information ? ` Contact them at: ${match.finder_contact_information}.` : '';
@@ -1322,14 +1322,14 @@ app.post(['/approve-post.php', '/approve-post'], requireAdmin, async (req, res) 
       if (lostRows.length === 0) return res.status(404).send('Lost item not found.');
       const lost = lostRows[0];
 
-      await execute('UPDATE lost_items SET status = "Approved" WHERE lost_id = ?', [id]);
+      await execute("UPDATE lost_items SET status = 'Approved' WHERE lost_id = ?", [id]);
 
       await execute(`
         INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
         VALUES (?, NULL, 'Post Approved', ?, 0, 'user')
       `, [lost.user_id, `Your lost item post '${lost.item_name}' has been approved by the admin.`]);
 
-      const approvedFound = await query('SELECT * FROM found_items WHERE status = "Approved"');
+      const approvedFound = await query("SELECT * FROM found_items WHERE status = 'Approved'");
       for (const found of approvedFound) {
         const scores = calculateAdminMatchScores(lost, found);
         if (scores.matchPercentage >= 80) {
@@ -1380,14 +1380,14 @@ app.post(['/approve-post.php', '/approve-post'], requireAdmin, async (req, res) 
       if (foundRows.length === 0) return res.status(404).send('Found item not found.');
       const found = foundRows[0];
 
-      await execute('UPDATE found_items SET status = "Approved" WHERE found_id = ?', [id]);
+      await execute("UPDATE found_items SET status = 'Approved' WHERE found_id = ?", [id]);
 
       await execute(`
         INSERT INTO notifications (user_id, match_id, title, message, is_read, receiver)
         VALUES (?, NULL, 'Post Approved', ?, 0, 'user')
       `, [found.user_id, `Your found item post '${found.item_name}' has been approved by the admin.`]);
 
-      const approvedLost = await query('SELECT * FROM lost_items WHERE status = "Approved"');
+      const approvedLost = await query("SELECT * FROM lost_items WHERE status = 'Approved'");
       for (const lost of approvedLost) {
         const scores = calculateAdminMatchScores(lost, found);
         if (scores.matchPercentage >= 80) {
