@@ -1,228 +1,158 @@
 const { escapeHtml, csrfPostScript } = require('../lib/auth');
+const { renderAdminLayout } = require('./layoutView');
 
-function renderDeletePostsView({ lostPosts = [], foundPosts = [], csrfToken = '' }) {
+function renderDeletePostsView({ lostPosts = [], foundPosts = [], csrfToken = '', admin_username = 'Admin' }) {
   const lostRows = lostPosts.length > 0
     ? lostPosts.map(post => `
-      <tr>
-        <td>#${parseInt(post.lost_id, 10)}</td>
-        <td>
-          <strong>${escapeHtml(post.item_name)}</strong>
-          <br>
-          <span class="lost-label">LOST</span>
+      <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${parseInt(post.lost_id, 10)}</td>
+        <td class="py-3.5 px-4">
+          <strong class="text-slate-900 text-sm">${escapeHtml(post.item_name)}</strong>
+          <span class="inline-block ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 lost-label">LOST</span>
         </td>
-        <td>${escapeHtml(post.category)}</td>
-        <td>${escapeHtml(post.full_name || 'Unknown User')}</td>
-        <td class="status">${escapeHtml(post.status)}</td>
-        <td>
+        <td class="py-3.5 px-4">
+          <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+            ${escapeHtml(post.category)}
+          </span>
+        </td>
+        <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(post.full_name || 'Unknown User')}</td>
+        <td class="py-3.5 px-4 text-xs status">
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">${escapeHtml(post.status)}</span>
+        </td>
+        <td class="py-3.5 px-4 text-xs">
           <a
             href="delete-posts.php?delete_lost=${parseInt(post.lost_id, 10)}"
             data-post="1"
-            class="delete-btn"
+            class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold transition inline-flex items-center gap-1 delete-btn"
             onclick="return confirm('Are you sure you want to delete this lost item post? Related matches and notifications will also be removed.');"
           >
-            Delete
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Delete</span>
           </a>
         </td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="6" class="empty">No lost item posts available.</td>
+        <td colspan="6" class="py-6 text-center text-slate-400 text-xs empty">No lost item posts available.</td>
       </tr>
     `;
 
   const foundRows = foundPosts.length > 0
     ? foundPosts.map(post => `
-      <tr>
-        <td>#${parseInt(post.found_id, 10)}</td>
-        <td>
-          <strong>${escapeHtml(post.item_name)}</strong>
-          <br>
-          <span class="found-label">FOUND</span>
+      <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${parseInt(post.found_id, 10)}</td>
+        <td class="py-3.5 px-4">
+          <strong class="text-slate-900 text-sm">${escapeHtml(post.item_name)}</strong>
+          <span class="inline-block ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 found-label">FOUND</span>
         </td>
-        <td>${escapeHtml(post.category)}</td>
-        <td>${escapeHtml(post.full_name || 'Unknown User')}</td>
-        <td class="status">${escapeHtml(post.status)}</td>
-        <td>
+        <td class="py-3.5 px-4">
+          <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+            ${escapeHtml(post.category)}
+          </span>
+        </td>
+        <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(post.full_name || 'Unknown User')}</td>
+        <td class="py-3.5 px-4 text-xs status">
+          <span class="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-bold">${escapeHtml(post.status)}</span>
+        </td>
+        <td class="py-3.5 px-4 text-xs">
           <a
             href="delete-posts.php?delete_found=${parseInt(post.found_id, 10)}"
             data-post="1"
-            class="delete-btn"
+            class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold transition inline-flex items-center gap-1 delete-btn"
             onclick="return confirm('Are you sure you want to delete this found item post? Related matches and notifications will also be removed.');"
           >
-            Delete
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Delete</span>
           </a>
         </td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="6" class="empty">No found item posts available.</td>
+        <td colspan="6" class="py-6 text-center text-slate-400 text-xs empty">No found item posts available.</td>
       </tr>
     `;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Posts</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        body {
-            background: #f5f7f9;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 30px;
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
-        }
-        h1 {
-            margin-bottom: 8px;
-            color: #003844;
-        }
-        .subtitle {
-            color: #6b7280;
-            margin-bottom: 30px;
-        }
-        .section-title {
-            margin-top: 30px;
-            margin-bottom: 15px;
-            color: #003844;
-            font-size: 20px;
-        }
-        .table-wrapper {
-            overflow-x: auto;
-            margin-bottom: 25px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-        th {
-            background: #003844;
-            color: white;
-            padding: 13px;
-            text-align: left;
-        }
-        td {
-            padding: 13px;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        tr:hover {
-            background: #f8fafc;
-        }
-        .lost-label {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 6px;
-            background: #fee2e2;
-            color: #b91c1c;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .found-label {
-            display: inline-block;
-            padding: 5px 9px;
-            border-radius: 6px;
-            background: #dcfce7;
-            color: #15803d;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .status {
-            font-size: 13px;
-            font-weight: 600;
-        }
-        .delete-btn {
-            display: inline-block;
-            padding: 8px 13px;
-            background: #dc2626;
-            color: white;
-            text-decoration: none;
-            border-radius: 7px;
-            font-size: 13px;
-            font-weight: bold;
-        }
-        .delete-btn:hover {
-            background: #b91c1c;
-        }
-        .empty {
-            text-align: center;
-            color: #777;
-            padding: 25px;
-        }
-        .back-btn {
-            display: inline-block;
-            margin-top: 15px;
-            padding: 11px 20px;
-            background: #003844;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: bold;
-        }
-        .back-btn:hover {
-            background: #005766;
-        }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Delete Posts</h1>
-    <p class="subtitle">Remove unwanted or invalid lost and found posts.</p>
-
-    <!-- LOST POSTS -->
-    <h2 class="section-title">Lost Item Posts</h2>
-    <div class="table-wrapper">
-        <table>
-            <thead>
-                <tr>
-                    <th>Post ID</th>
-                    <th>Item Name</th>
-                    <th>Category</th>
-                    <th>Posted By</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${lostRows}
-            </tbody>
-        </table>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Delete Posts</h2>
+        <p class="text-sm text-slate-500 mt-1 subtitle">Remove obsolete or invalid lost and found item listings.</p>
+      </div>
+      <a href="admin-dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 back-btn">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Dashboard</span>
+      </a>
     </div>
 
-    <!-- FOUND POSTS -->
-    <h2 class="section-title">Found Item Posts</h2>
-    <div class="table-wrapper">
-        <table>
+    <div class="space-y-6 container">
+      <!-- LOST POSTS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden table-wrapper">
+        <div class="px-6 py-4 bg-rose-50/70 border-b border-rose-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2 section-title">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            Lost Item Posts
+          </h3>
+          <span class="text-xs font-semibold text-rose-700 bg-rose-100/70 px-2.5 py-0.5 rounded-full">${lostPosts.length} Posts</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
             <thead>
-                <tr>
-                    <th>Post ID</th>
-                    <th>Item Name</th>
-                    <th>Category</th>
-                    <th>Posted By</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Posted By</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Action</th>
+              </tr>
             </thead>
             <tbody>
-                ${foundRows}
+              ${lostRows}
             </tbody>
-        </table>
+          </table>
+        </div>
+      </div>
+
+      <!-- FOUND POSTS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden table-wrapper">
+        <div class="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2 section-title">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            Found Item Posts
+          </h3>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">${foundPosts.length} Posts</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Posted By</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${foundRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  `;
 
-    <a href="admin-dashboard.php" class="back-btn">← Back to Dashboard</a>
-</div>
-
-${csrfPostScript(csrfToken)}
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: 'Delete Posts',
+    activeNav: 'delete',
+    admin_username,
+    content,
+    scripts: csrfPostScript(csrfToken)
+  });
 }
 
 module.exports = { renderDeletePostsView };
-

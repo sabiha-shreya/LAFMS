@@ -1,151 +1,195 @@
 const { escapeHtml } = require('../lib/auth');
+const { renderAdminLayout } = require('./layoutView');
 
-function renderLostItemDetail({ item }) {
+function renderLostItemDetail({ item, admin_username = 'Admin' }) {
   const imageHtml = item.item_image ? `
-    <div class="info-item">
-      <span class="info-label">Picture</span>
-      <div class="info-value">
-        <img src="${escapeHtml(item.item_image)}" style="max-width:250px;border-radius:10px;">
-      </div>
+    <div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+      <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Picture</span>
+      <img src="${escapeHtml(item.item_image)}" class="max-w-xs rounded-xl shadow-xs border border-slate-200">
     </div>` : '';
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lost Item Details</title>
-<link rel="stylesheet" href="css/style.css">
-<style>
-* { box-sizing: border-box; }
-body { background: #f5f7fb; font-family: Arial, sans-serif; color: #1f2937; }
-.details-page { max-width: 1100px; margin: 40px auto; padding: 0 20px 40px; }
-.page-header { text-align: center; margin-bottom: 25px; }
-.page-header h1 { margin: 0; font-size: 30px; color: #111827; }
-.page-header p { margin-top: 8px; color: #6b7280; }
-.information-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-.info-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,.07); }
-.info-card h2 { margin-top: 0; margin-bottom: 22px; font-size: 20px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
-.info-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-.info-item:last-child { border-bottom: none; }
-.info-label { display: block; font-size: 13px; font-weight: bold; color: #6b7280; margin-bottom: 4px; }
-.info-value { font-size: 15px; color: #111827; word-break: break-word; }
-.status { display: inline-block; padding: 4px 10px; border-radius: 20px; background: #dcfce7; color: #15803d; font-size: 12px; font-weight: bold; }
-.back-button { display: inline-block; margin-top: 25px; background: #003844; color: white !important; padding: 11px 20px; border-radius: 8px; text-decoration: none; }
-@media (max-width: 768px) { .information-grid { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-<div class="details-page">
-    <div class="page-header">
-        <h1>Lost Item Details</h1>
-        <p>Complete details of the approved lost item</p>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Lost Item Details</h2>
+        <p class="text-sm text-slate-500 mt-1">Complete details of the approved lost item post.</p>
+      </div>
+      <a href="view-lost-items.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 back-button">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Lost Items</span>
+      </a>
     </div>
 
-    <div class="information-grid">
-        <div class="info-card">
-            <h2>Owner Information</h2>
-            <div class="info-item"><span class="info-label">Full Name</span><div class="info-value">${escapeHtml(item.full_name || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Student ID</span><div class="info-value">${escapeHtml(item.student_id || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Email</span><div class="info-value">${escapeHtml(item.email || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Department</span><div class="info-value">${escapeHtml(item.department || 'N/A')}</div></div>
+    <!-- DETAILS GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- OWNER INFO -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <i data-lucide="user" class="w-5 h-5 text-rose-500"></i>
+          <h3 class="text-base font-bold text-slate-900">Owner Information</h3>
+        </div>
+        <div class="space-y-3 text-xs">
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Full Name</span>
+            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.full_name || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Student ID</span>
+            <p class="font-bold text-slate-900 text-sm font-mono">${escapeHtml(item.student_id || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Email</span>
+            <p class="font-semibold text-slate-800 text-sm">${escapeHtml(item.email || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Department</span>
+            <p class="font-semibold text-slate-800 text-sm">${escapeHtml(item.department || 'N/A')}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITEM INFO -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <i data-lucide="file-text" class="w-5 h-5 text-rose-500"></i>
+          <h3 class="text-base font-bold text-slate-900">Item Information</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Item Name</span>
+            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.item_name)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Category</span>
+            <p class="font-bold text-slate-800 text-sm">${escapeHtml(item.category)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Lost Date</span>
+            <p class="font-bold text-slate-800">${escapeHtml(item.lost_date)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Lost Location</span>
+            <p class="font-bold text-slate-800">${escapeHtml(item.lost_location)}</p>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Contact Information</span>
+            <p class="font-bold text-slate-800 font-mono">${escapeHtml(item.contact_information)}</p>
+          </div>
         </div>
 
-        <div class="info-card">
-            <h2>Item Information</h2>
-            <div class="info-item"><span class="info-label">Item Name</span><div class="info-value">${escapeHtml(item.item_name)}</div></div>
-            <div class="info-item"><span class="info-label">Category</span><div class="info-value">${escapeHtml(item.category)}</div></div>
-            <div class="info-item"><span class="info-label">Description</span><div class="info-value">${escapeHtml(item.description || '').replace(/\n/g, '<br>')}</div></div>
-            <div class="info-item"><span class="info-label">Lost Date</span><div class="info-value">${escapeHtml(item.lost_date)}</div></div>
-            <div class="info-item"><span class="info-label">Lost Location</span><div class="info-value">${escapeHtml(item.lost_location)}</div></div>
-            <div class="info-item"><span class="info-label">Contact Information</span><div class="info-value">${escapeHtml(item.contact_information)}</div></div>
-            <div class="info-item"><span class="info-label">Secret Information</span><div class="info-value">${escapeHtml(item.secret_information || 'None').replace(/\n/g, '<br>')}</div></div>
-            ${imageHtml}
-            <div class="info-item"><span class="info-label">Status</span><div class="info-value"><span class="status">${escapeHtml(item.status)}</span></div></div>
-            <div class="info-item"><span class="info-label">Posted Date</span><div class="info-value">${escapeHtml(item.created_at)}</div></div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+          <span class="text-slate-400 text-[11px] font-bold uppercase block mb-1">Description</span>
+          <p class="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap">${escapeHtml(item.description || '').replace(/\n/g, '<br>')}</p>
         </div>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5">
+          <span class="text-amber-800 text-[11px] font-bold uppercase block mb-1">Secret Information</span>
+          <p class="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap">${escapeHtml(item.secret_information || 'None').replace(/\n/g, '<br>')}</p>
+        </div>
+
+        ${imageHtml}
+
+        <div class="flex items-center justify-between text-xs pt-2">
+          <div>
+            <span class="text-slate-400 font-semibold">Status:</span>
+            <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold status">${escapeHtml(item.status)}</span>
+          </div>
+          <span class="text-slate-400">Posted: ${escapeHtml(item.created_at)}</span>
+        </div>
+      </div>
     </div>
+  `;
 
-    <a href="view-lost-items.php" class="back-button">← Back to Lost Items</a>
-</div>
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: 'Lost Item Details',
+    activeNav: 'lost-items',
+    admin_username,
+    content
+  });
 }
 
-function renderLostItemsList({ items }) {
+function renderLostItemsList({ items = [], admin_username = 'Admin' }) {
   const rowsHtml = (items && items.length > 0) ? items.map(row => `
-    <tr>
-      <td>${escapeHtml(row.lost_id)}</td>
-      <td>
+    <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${escapeHtml(row.lost_id)}</td>
+      <td class="py-3.5 px-4">
         ${row.item_image
-          ? `<img src="${escapeHtml(row.item_image)}" alt="Lost Item" style="width:50px;height:50px;object-fit:cover;border-radius:6px;">`
-          : '<div style="color:#94a3b8;font-size:12px;">No Image</div>'}
+          ? `<img src="${escapeHtml(row.item_image)}" alt="Lost Item" class="w-10 h-10 object-cover rounded-lg border border-slate-200">`
+          : '<span class="text-xs text-slate-400 italic">No Image</span>'}
       </td>
-      <td>${escapeHtml(row.item_name)}</td>
-      <td>${escapeHtml(row.category)}</td>
-      <td>${escapeHtml(row.description)}</td>
-      <td>${escapeHtml(row.secret_information || '')}</td>
-      <td>${escapeHtml(row.lost_date)}</td>
-      <td>${escapeHtml(row.lost_location)}</td>
-      <td><span style="display:inline-block;padding:4px 10px;border-radius:20px;background:#dcfce7;color:#15803d;font-size:12px;font-weight:bold;">${escapeHtml(row.status)}</span></td>
-      <td><a href="view-lost-items.php?id=${row.lost_id}" class="btn" style="padding:6px 12px;font-size:12px;">View Details</a></td>
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-sm">${escapeHtml(row.item_name)}</td>
+      <td class="py-3.5 px-4">
+        <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+          ${escapeHtml(row.category)}
+        </span>
+      </td>
+      <td class="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">${escapeHtml(row.description || '')}</td>
+      <td class="py-3.5 px-4 text-xs text-amber-700 font-mono">${escapeHtml(row.secret_information || '')}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-600">${escapeHtml(row.lost_date)}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-600">${escapeHtml(row.lost_location)}</td>
+      <td class="py-3.5 px-4 text-xs">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">${escapeHtml(row.status)}</span>
+      </td>
+      <td class="py-3.5 px-4 text-xs">
+        <a href="view-lost-items.php?id=${row.lost_id}" class="px-3 py-1.5 bg-[#003844] hover:bg-[#0fa4af] text-white rounded-xl font-bold transition inline-block btn">View Details</a>
+      </td>
     </tr>
-  `).join('') : `<tr><td colspan="10" style="text-align:center;padding:30px;color:#6b7280;">No lost items available</td></tr>`;
+  `).join('') : `<tr><td colspan="10" class="py-8 text-center text-slate-400 text-xs">No lost items available</td></tr>`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>View All Lost Items</title>
-<link rel="stylesheet" href="css/style.css">
-<style>
-body { background: #f5f7fb; color: #1f2937; }
-.lost-page { max-width: 1300px; margin: 40px auto; padding: 0 20px 40px; }
-.page-header { text-align: center; margin-bottom: 25px; }
-.page-header h1 { margin: 0; font-size: 30px; color: #111827; }
-.page-header p { margin-top: 8px; color: #6b7280; }
-.table-card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 5px 20px rgba(0,0,0,.07); overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
-th { background: #003844; color: white; padding: 12px; text-align: left; font-size: 13px; }
-td { padding: 12px; border-bottom: 1px solid #eee; font-size: 13px; vertical-align: middle; }
-.back-dashboard { display: inline-block; margin-top: 22px; padding: 11px 20px; border-radius: 10px; background: #111827; color: white !important; text-decoration: none; }
-</style>
-</head>
-<body>
-<div class="lost-page">
-    <div class="page-header">
-        <h1>View All Lost Items</h1>
-        <p>All approved lost items</p>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">All Lost Items</h2>
+        <p class="text-sm text-slate-500 mt-1">Directory of all approved lost item records.</p>
+      </div>
+      <a href="admin-dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 back-dashboard">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Dashboard</span>
+      </a>
     </div>
 
-    <div class="table-card">
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Picture</th>
-                    <th>Item Name</th>
-                    <th>Category</th>
-                    <th>Description</th>
-                    <th>Secret Information</th>
-                    <th>Lost Date</th>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${rowsHtml}
-            </tbody>
+    <!-- TABLE CARD -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden table-card">
+      <div class="px-6 py-4 bg-rose-50/70 border-b border-rose-100 flex items-center justify-between">
+        <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+          Approved Lost Item Reports
+        </h3>
+        <span class="text-xs font-semibold text-rose-700 bg-rose-100/70 px-2.5 py-0.5 rounded-full">${items.length} Items</span>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <th class="py-3 px-4">ID</th>
+              <th class="py-3 px-4">Picture</th>
+              <th class="py-3 px-4">Item Name</th>
+              <th class="py-3 px-4">Category</th>
+              <th class="py-3 px-4">Description</th>
+              <th class="py-3 px-4">Secret Info</th>
+              <th class="py-3 px-4">Date</th>
+              <th class="py-3 px-4">Location</th>
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
         </table>
+      </div>
     </div>
+  `;
 
-    <a href="admin-dashboard.php" class="back-dashboard">← Back to Dashboard</a>
-</div>
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: 'All Lost Items',
+    activeNav: 'lost-items',
+    admin_username,
+    content
+  });
 }
 
 module.exports = { renderLostItemDetail, renderLostItemsList };
-

@@ -1,197 +1,269 @@
 const { escapeHtml, csrfPostScript } = require('../lib/auth');
+const { renderAdminLayout } = require('./layoutView');
 
-function renderPendingPostsDetail({ item, type, csrfToken }) {
+function renderPendingPostsDetail({ item, type, csrfToken, admin_username = 'Admin' }) {
   const isLost = type === 'lost';
   const pageTitle = isLost ? 'Pending Lost Item Details' : 'Pending Found Item Details';
   const id = isLost ? item.lost_id : item.found_id;
   const imageHtml = (isLost && item.item_image)
-    ? `<div class="info-item">
-         <span class="info-label">Picture</span>
-         <div class="info-value">
-           <img src="${escapeHtml(item.item_image)}" style="max-width:250px;border-radius:10px;">
-         </div>
+    ? `<div class="p-4 rounded-xl bg-slate-50 border border-slate-200">
+         <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">Picture</span>
+         <img src="${escapeHtml(item.item_image)}" class="max-w-xs rounded-xl shadow-xs border border-slate-200">
        </div>`
     : '';
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${pageTitle}</title>
-<style>
-* { box-sizing: border-box; }
-body { background: #f5f7fb; font-family: Arial, sans-serif; color: #1f2937; }
-.details-page { max-width: 1100px; margin: 40px auto; padding: 0 20px 40px; }
-.page-header { text-align: center; margin-bottom: 25px; }
-.page-header h1 { margin: 0; font-size: 30px; color: #111827; }
-.page-header p { margin-top: 8px; color: #6b7280; }
-.information-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
-.info-card { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 5px 20px rgba(0,0,0,.07); }
-.info-card h2 { margin-top: 0; margin-bottom: 22px; font-size: 20px; color: #111827; border-bottom: 1px solid #e5e7eb; padding-bottom: 12px; }
-.info-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
-.info-item:last-child { border-bottom: none; }
-.info-label { display: block; font-size: 13px; font-weight: bold; color: #6b7280; margin-bottom: 4px; }
-.info-value { font-size: 15px; color: #111827; word-break: break-word; }
-.status { display: inline-block; padding: 4px 10px; border-radius: 20px; background: #fef3c7; color: #92400e; font-size: 12px; font-weight: bold; }
-.action-buttons { margin-top: 30px; display: flex; gap: 12px; }
-.approve-button { background: #166534; color: white !important; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px; }
-.reject-button { background: #b91c1c; color: white !important; padding: 12px 25px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 15px; }
-.back-button { display: inline-block; margin-top: 25px; background: #003844; color: white !important; padding: 11px 20px; border-radius: 8px; text-decoration: none; }
-@media (max-width: 768px) { .information-grid { grid-template-columns: 1fr; } }
-</style>
-</head>
-<body>
-<div class="details-page">
-    <div class="page-header">
-        <h1>${pageTitle}</h1>
-        <p>Review the submitted information before approving.</p>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">${pageTitle}</h2>
+        <p class="text-sm text-slate-500 mt-1">Review the submitted post information before approving or rejecting.</p>
+      </div>
+      <a href="pending-posts.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 back-button">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Pending Posts</span>
+      </a>
     </div>
 
-    <div class="information-grid">
-        <div class="info-card">
-            <h2>User Information</h2>
-            <div class="info-item"><span class="info-label">Full Name</span><div class="info-value">${escapeHtml(item.full_name || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Student ID</span><div class="info-value">${escapeHtml(item.student_id || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Email</span><div class="info-value">${escapeHtml(item.email || 'N/A')}</div></div>
-            <div class="info-item"><span class="info-label">Department</span><div class="info-value">${escapeHtml(item.department || 'N/A')}</div></div>
+    <!-- DETAILS GRID -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <!-- USER INFO -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <i data-lucide="user" class="w-5 h-5 text-amber-500"></i>
+          <h3 class="text-base font-bold text-slate-900">User Information</h3>
+        </div>
+        <div class="space-y-3 text-xs">
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Full Name</span>
+            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.full_name || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Student ID</span>
+            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.student_id || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Email</span>
+            <p class="font-semibold text-slate-800 text-sm">${escapeHtml(item.email || 'N/A')}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Department</span>
+            <p class="font-semibold text-slate-800 text-sm">${escapeHtml(item.department || 'N/A')}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ITEM INFO -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 space-y-4">
+        <div class="flex items-center gap-2.5 border-b border-slate-100 pb-3">
+          <i data-lucide="package" class="w-5 h-5 text-amber-500"></i>
+          <h3 class="text-base font-bold text-slate-900">Item Information</h3>
+        </div>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Item Name</span>
+            <p class="font-bold text-slate-900 text-sm">${escapeHtml(item.item_name)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Category</span>
+            <p class="font-bold text-slate-800 text-sm">${escapeHtml(item.category)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">${isLost ? 'Lost Date' : 'Found Date'}</span>
+            <p class="font-bold text-slate-800">${escapeHtml(isLost ? item.lost_date : item.found_date)}</p>
+          </div>
+          <div>
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Location</span>
+            <p class="font-bold text-slate-800">${escapeHtml(isLost ? item.lost_location : item.found_location)}</p>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400 font-bold uppercase tracking-wider block mb-0.5">Contact</span>
+            <p class="font-bold text-slate-800 font-mono">${escapeHtml(isLost ? item.contact_information : item.finder_contact_information)}</p>
+          </div>
         </div>
 
-        <div class="info-card">
-            <h2>Item Information</h2>
-            <div class="info-item"><span class="info-label">Item Name</span><div class="info-value">${escapeHtml(item.item_name)}</div></div>
-            <div class="info-item"><span class="info-label">Category</span><div class="info-value">${escapeHtml(item.category)}</div></div>
-            <div class="info-item"><span class="info-label">Description</span><div class="info-value">${escapeHtml(item.description || '').replace(/\n/g, '<br>')}</div></div>
-            <div class="info-item"><span class="info-label">${isLost ? 'Lost Date' : 'Found Date'}</span><div class="info-value">${escapeHtml(isLost ? item.lost_date : item.found_date)}</div></div>
-            <div class="info-item"><span class="info-label">Location</span><div class="info-value">${escapeHtml(isLost ? item.lost_location : item.found_location)}</div></div>
-            <div class="info-item"><span class="info-label">Contact</span><div class="info-value">${escapeHtml(isLost ? item.contact_information : item.finder_contact_information)}</div></div>
-            ${isLost ? `<div class="info-item"><span class="info-label">Secret Information</span><div class="info-value">${escapeHtml(item.secret_information || 'None').replace(/\n/g, '<br>')}</div></div>` : ''}
-            ${imageHtml}
-            <div class="info-item"><span class="info-label">Status</span><div class="info-value"><span class="status">${escapeHtml(item.status)}</span></div></div>
-            <div class="info-item"><span class="info-label">Posted Date</span><div class="info-value">${escapeHtml(item.created_at)}</div></div>
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-100">
+          <span class="text-slate-400 text-[11px] font-bold uppercase block mb-1">Description</span>
+          <p class="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap">${escapeHtml(item.description || '').replace(/\n/g, '<br>')}</p>
         </div>
+
+        ${isLost ? `
+          <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5">
+            <span class="text-amber-800 text-[11px] font-bold uppercase block mb-1">Secret Information</span>
+            <p class="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap">${escapeHtml(item.secret_information || 'None').replace(/\n/g, '<br>')}</p>
+          </div>
+        ` : ''}
+
+        ${imageHtml}
+
+        <div class="flex items-center justify-between text-xs pt-2">
+          <div>
+            <span class="text-slate-400 font-semibold">Status:</span>
+            <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold status">${escapeHtml(item.status)}</span>
+          </div>
+          <span class="text-slate-400">Posted: ${escapeHtml(item.created_at)}</span>
+        </div>
+      </div>
     </div>
 
-    <div class="action-buttons">
-        <a href="approve-post.php?id=${id}&type=${type}" data-post="1" class="approve-button">Approve</a>
-        <a href="reject-post.php?id=${id}&type=${type}" data-post="1" class="reject-button">Reject</a>
+    <!-- ACTION BUTTONS -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 flex flex-wrap gap-4 action-buttons">
+      <a href="approve-post.php?id=${id}&type=${type}" data-post="1" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-xs transition shadow-xs inline-flex items-center gap-1.5 approve-button">
+        <i data-lucide="check" class="w-4 h-4"></i>
+        <span>Approve</span>
+      </a>
+      <a href="reject-post.php?id=${id}&type=${type}" data-post="1" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-xs transition shadow-xs inline-flex items-center gap-1.5 reject-button">
+        <i data-lucide="x" class="w-4 h-4"></i>
+        <span>Reject</span>
+      </a>
     </div>
+  `;
 
-    <a href="pending-posts.php" class="back-button">Back to Pending Posts</a>
-</div>
-${csrfPostScript(csrfToken)}
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: pageTitle,
+    activeNav: 'pending',
+    admin_username,
+    content,
+    scripts: csrfPostScript(csrfToken)
+  });
 }
 
-function renderPendingPostsList({ pending_lost, pending_found, csrfToken }) {
+function renderPendingPostsList({ pending_lost = [], pending_found = [], csrfToken, admin_username = 'Admin' }) {
   const lostRows = (pending_lost && pending_lost.length > 0) ? pending_lost.map(row => `
-    <tr>
-      <td>${escapeHtml(row.lost_id)}</td>
-      <td>${escapeHtml(row.item_name)}</td>
-      <td>${escapeHtml(row.category)}</td>
-      <td>${escapeHtml(row.description)}</td>
-      <td>${escapeHtml(row.full_name || 'N/A')}</td>
-      <td>${escapeHtml(row.lost_date)}</td>
-      <td>${escapeHtml(row.secret_information || '')}</td>
-      <td><span class="status-badge">${escapeHtml(row.status)}</span></td>
-      <td>
-        <a href="pending-posts.php?id=${row.lost_id}&type=lost" class="view-details-btn">View Details</a>
-        <a href="approve-post.php?id=${row.lost_id}&type=lost" data-post="1" class="approve-btn">Approve</a>
-        <a href="reject-post.php?id=${row.lost_id}&type=lost" data-post="1" class="reject-btn">Reject</a>
+    <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${escapeHtml(row.lost_id)}</td>
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-sm">${escapeHtml(row.item_name)}</td>
+      <td class="py-3.5 px-4">
+        <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+          ${escapeHtml(row.category)}
+        </span>
+      </td>
+      <td class="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">${escapeHtml(row.description || '')}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(row.full_name || 'N/A')}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-500">${escapeHtml(row.lost_date)}</td>
+      <td class="py-3.5 px-4 text-xs text-amber-700 font-mono">${escapeHtml(row.secret_information || '')}</td>
+      <td class="py-3.5 px-4">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold status-badge">
+          ${escapeHtml(row.status)}
+        </span>
+      </td>
+      <td class="py-3.5 px-4 text-xs space-x-1">
+        <a href="pending-posts.php?id=${row.lost_id}&type=lost" class="px-2.5 py-1 bg-[#003844] hover:bg-[#0fa4af] text-white rounded-lg font-bold transition inline-block view-details-btn">View Details</a>
+        <a href="approve-post.php?id=${row.lost_id}&type=lost" data-post="1" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition inline-block approve-btn">Approve</a>
+        <a href="reject-post.php?id=${row.lost_id}&type=lost" data-post="1" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold transition inline-block reject-btn">Reject</a>
       </td>
     </tr>
-  `).join('') : `<tr><td colspan="9" class="empty-message">No pending lost items found.</td></tr>`;
+  `).join('') : `<tr><td colspan="9" class="py-8 text-center text-slate-400 text-xs empty-message">No pending lost items found.</td></tr>`;
 
   const foundRows = (pending_found && pending_found.length > 0) ? pending_found.map(row => `
-    <tr>
-      <td>${escapeHtml(row.found_id)}</td>
-      <td>${escapeHtml(row.item_name)}</td>
-      <td>${escapeHtml(row.category)}</td>
-      <td>${escapeHtml(row.description)}</td>
-      <td>${escapeHtml(row.full_name || 'N/A')}</td>
-      <td>${escapeHtml(row.found_date)}</td>
-      <td><span class="status-badge">${escapeHtml(row.status)}</span></td>
-      <td>
-        <a href="pending-posts.php?id=${row.found_id}&type=found" class="view-details-btn">View Details</a>
-        <a href="approve-post.php?id=${row.found_id}&type=found" data-post="1" class="approve-btn">Approve</a>
-        <a href="reject-post.php?id=${row.found_id}&type=found" data-post="1" class="reject-btn">Reject</a>
+    <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${escapeHtml(row.found_id)}</td>
+      <td class="py-3.5 px-4 font-bold text-slate-900 text-sm">${escapeHtml(row.item_name)}</td>
+      <td class="py-3.5 px-4">
+        <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+          ${escapeHtml(row.category)}
+        </span>
+      </td>
+      <td class="py-3.5 px-4 text-xs text-slate-600 max-w-xs truncate">${escapeHtml(row.description || '')}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(row.full_name || 'N/A')}</td>
+      <td class="py-3.5 px-4 text-xs text-slate-500">${escapeHtml(row.found_date)}</td>
+      <td class="py-3.5 px-4">
+        <span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold status-badge">
+          ${escapeHtml(row.status)}
+        </span>
+      </td>
+      <td class="py-3.5 px-4 text-xs space-x-1">
+        <a href="pending-posts.php?id=${row.found_id}&type=found" class="px-2.5 py-1 bg-[#003844] hover:bg-[#0fa4af] text-white rounded-lg font-bold transition inline-block view-details-btn">View Details</a>
+        <a href="approve-post.php?id=${row.found_id}&type=found" data-post="1" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold transition inline-block approve-btn">Approve</a>
+        <a href="reject-post.php?id=${row.found_id}&type=found" data-post="1" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold transition inline-block reject-btn">Reject</a>
       </td>
     </tr>
-  `).join('') : `<tr><td colspan="8" class="empty-message">No pending found items found.</td></tr>`;
+  `).join('') : `<tr><td colspan="8" class="py-8 text-center text-slate-400 text-xs empty-message">No pending found items found.</td></tr>`;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pending Posts</title>
-<link rel="stylesheet" href="css/style.css">
-<style>
-body { background: #f5f7fb; color: #1f2937; }
-.container { max-width: 1250px; margin: 40px auto; padding: 0 20px 40px; }
-h1 { color: #111827; margin-bottom: 8px; }
-.container > p { color: #6b7280; margin-bottom: 30px; }
-h2 { color: #111827; margin-top: 30px; margin-bottom: 15px; }
-.table-card { background: white; border-radius: 16px; padding: 18px; box-shadow: 0 5px 20px rgba(0,0,0,.07); overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
-th { background: #f3f4f6; color: #374151 !important; font-size: 14px; font-weight: bold; padding: 14px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; }
-td { padding: 13px 12px; border-bottom: 1px solid #eee; color: #374151 !important; font-size: 14px; vertical-align: middle; }
-.status-badge { display: inline-block; padding: 6px 11px; border-radius: 20px; background: #fef3c7; color: #92400e !important; font-size: 12px; font-weight: bold; }
-.view-details-btn { display: inline-block; padding: 8px 14px; border-radius: 8px; background: #003844; color: white !important; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 5px; margin-bottom: 5px; }
-.view-details-btn:hover { background: #0fa4af; }
-.approve-btn { display: inline-block; padding: 8px 14px; border-radius: 8px; background: #166534; color: white !important; text-decoration: none; font-size: 13px; font-weight: 600; margin-right: 5px; margin-bottom: 5px; }
-.reject-btn { display: inline-block; padding: 8px 14px; border-radius: 8px; background: #b91c1c; color: white !important; text-decoration: none; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
-.back-dashboard { display: inline-block; margin-top: 22px; padding: 11px 20px; border-radius: 10px; background: #111827; color: white !important; text-decoration: none; }
-.empty-message { text-align: center; padding: 35px; color: #6b7280 !important; }
-</style>
-</head>
-<body>
-<div class="container">
-    <h1>Pending Posts</h1>
-    <p>Posts waiting for admin approval.</p>
-
-    <h2>Pending Lost Items</h2>
-    <div class="table-card">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Posted By</th>
-                <th>Date</th>
-                <th>Secret Information</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            ${lostRows}
-        </table>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Pending Posts</h2>
+        <p class="text-sm text-slate-500 mt-1">Posts waiting for admin approval.</p>
+      </div>
+      <a href="admin-dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 back-dashboard">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Dashboard</span>
+      </a>
     </div>
 
-    <h2>Pending Found Items</h2>
-    <div class="table-card">
-        <table>
-            <tr>
-                <th>ID</th>
-                <th>Item Name</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Posted By</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-            ${foundRows}
-        </table>
-    </div>
+    <div class="space-y-6">
+      <!-- PENDING LOST ITEMS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden table-card">
+        <div class="px-6 py-4 bg-rose-50/70 border-b border-rose-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+            Pending Lost Items
+          </h3>
+          <span class="text-xs font-semibold text-rose-700 bg-rose-100/70 px-2.5 py-0.5 rounded-full">${pending_lost.length} Pending</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Description</th>
+                <th class="py-3 px-4">Posted By</th>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Secret Information</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lostRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-    <a href="admin-dashboard.php" class="back-dashboard">Back to Dashboard</a>
-</div>
-${csrfPostScript(csrfToken)}
-</body>
-</html>`;
+      <!-- PENDING FOUND ITEMS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden table-card">
+        <div class="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            Pending Found Items
+          </h3>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">${pending_found.length} Pending</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Description</th>
+                <th class="py-3 px-4">Posted By</th>
+                <th class="py-3 px-4">Date</th>
+                <th class="py-3 px-4">Status</th>
+                <th class="py-3 px-4">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${foundRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return renderAdminLayout({
+    title: 'Pending Posts',
+    activeNav: 'pending',
+    admin_username,
+    content,
+    scripts: csrfPostScript(csrfToken)
+  });
 }
 
 module.exports = { renderPendingPostsDetail, renderPendingPostsList };
-

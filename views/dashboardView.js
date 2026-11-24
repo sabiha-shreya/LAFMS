@@ -163,6 +163,17 @@ function renderDashboard({ full_name, unread_count, lost_items, found_items, rec
                 <i data-lucide="heart" class="w-4 h-4"></i>
                 <span>My Matches</span>
             </a>
+
+            <a href="notifications.php" class="flex items-center justify-between px-4 py-3 text-teal-100/70 hover:text-white hover:bg-white/10 rounded-xl transition">
+                <div class="flex items-center gap-3.5">
+                    <i data-lucide="bell" class="w-4 h-4"></i>
+                    <span>Notifications</span>
+                </div>
+                ${unread_count > 0 ? `
+                <span class="bg-emerald-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-sm">
+                    ${unread_count}
+                </span>` : ''}
+            </a>
         </nav>
     </div>
 

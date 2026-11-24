@@ -1,271 +1,98 @@
 const { escapeHtml, csrfPostScript } = require('../lib/auth');
+const { renderAdminLayout } = require('./layoutView');
 
-function renderManageUsersView({ users = [], deleted = false, csrfToken = '' }) {
+function renderManageUsersView({ users = [], deleted = false, csrfToken = '', admin_username = 'Admin' }) {
   const userRows = users.length > 0
     ? users.map(user => `
-      <tr>
-        <td>
-          <span class="user-id">#${parseInt(user.user_id, 10)}</span>
+      <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-xs user-id">#${parseInt(user.user_id, 10)}</td>
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-sm user-name">${escapeHtml(user.full_name)}</td>
+        <td class="py-3.5 px-4 font-mono text-xs text-slate-600 student-id">${escapeHtml(user.student_id)}</td>
+        <td class="py-3.5 px-4 text-xs text-slate-600 email">${escapeHtml(user.email)}</td>
+        <td class="py-3.5 px-4 department">
+          <span class="inline-block bg-slate-100 text-slate-700 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+            ${escapeHtml(user.department)}
+          </span>
         </td>
-        <td>
-          <span class="user-name">${escapeHtml(user.full_name)}</span>
-        </td>
-        <td>
-          <span class="student-id">${escapeHtml(user.student_id)}</span>
-        </td>
-        <td>
-          <span class="email">${escapeHtml(user.email)}</span>
-        </td>
-        <td>
-          <span class="department">${escapeHtml(user.department)}</span>
-        </td>
-        <td>
-          <span class="date">${escapeHtml(user.created_at)}</span>
-        </td>
-        <td>
+        <td class="py-3.5 px-4 text-xs text-slate-400 date">${escapeHtml(user.created_at)}</td>
+        <td class="py-3.5 px-4 text-xs">
           <a
             href="manage-users.php?delete_id=${parseInt(user.user_id, 10)}"
             data-post="1"
-            class="delete-btn"
+            class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold transition inline-flex items-center gap-1 delete-btn"
             onclick="return confirm('Are you sure you want to delete this user? The user notifications will also be deleted.');"
           >
-            🗑 Delete
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+            <span>Delete</span>
           </a>
         </td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="7" class="empty">No users available.</td>
+        <td colspan="7" class="py-8 text-center text-slate-400 text-xs empty">No users available.</td>
       </tr>
     `;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manage Users</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-        * {
-            box-sizing: border-box;
-        }
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #eef7f8, #f8fafc);
-            font-family: Arial, Helvetica, sans-serif;
-            color: #1f2937;
-        }
-        .page-container {
-            max-width: 1250px;
-            margin: 45px auto;
-            padding: 0 20px;
-        }
-        .page-header {
-            background: #003844;
-            color: white;
-            padding: 28px 30px;
-            border-radius: 18px 18px 0 0;
-            box-shadow: 0 8px 25px rgba(0, 56, 68, 0.15);
-        }
-        .page-header h1 {
-            margin: 0;
-            font-size: 28px;
-            font-weight: 800;
-        }
-        .page-header p {
-            margin: 7px 0 0;
-            color: #cce9ec;
-            font-size: 14px;
-        }
-        .content-card {
-            background: white;
-            padding: 25px;
-            border-radius: 0 0 18px 18px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.07);
-        }
-        .success-message {
-            background: #ecfdf5;
-            color: #047857;
-            border: 1px solid #a7f3d0;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 14px;
-            font-weight: 600;
-        }
-        .table-wrapper {
-            width: 100%;
-            overflow-x: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-        }
-        table {
-            width: 100%;
-            min-width: 900px;
-            border-collapse: collapse;
-        }
-        thead {
-            background: #003844;
-        }
-        th {
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-size: 13px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #edf0f2;
-            font-size: 14px;
-            vertical-align: middle;
-        }
-        tbody tr {
-            transition: background 0.2s ease;
-        }
-        tbody tr:hover {
-            background: #f7fbfc;
-        }
-        tbody tr:last-child td {
-            border-bottom: none;
-        }
-        .user-id {
-            font-weight: 800;
-            color: #003844;
-        }
-        .user-name {
-            font-weight: 700;
-            color: #111827;
-        }
-        .student-id {
-            display: inline-block;
-            background: #eef7f8;
-            color: #006b7a;
-            padding: 5px 9px;
-            border-radius: 7px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-        .email {
-            color: #475569;
-        }
-        .department {
-            display: inline-block;
-            background: #f1f5f9;
-            color: #475569;
-            padding: 5px 9px;
-            border-radius: 7px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .date {
-            color: #64748b;
-            font-size: 12px;
-        }
-        .delete-btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 9px 14px;
-            background: #dc2626;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-size: 12px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-        .delete-btn:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-        }
-        .empty {
-            text-align: center;
-            padding: 45px;
-            color: #64748b;
-            font-size: 14px;
-        }
-        .bottom-actions {
-            margin-top: 22px;
-        }
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 11px 18px;
-            background: #003844;
-            color: white;
-            text-decoration: none;
-            border-radius: 9px;
-            font-size: 13px;
-            font-weight: 700;
-            transition: all 0.2s ease;
-        }
-        .back-btn:hover {
-            background: #005766;
-            transform: translateY(-1px);
-        }
-        @media (max-width: 700px) {
-            .page-container {
-                margin: 20px auto;
-                padding: 0 12px;
-            }
-            .page-header {
-                padding: 22px;
-            }
-            .page-header h1 {
-                font-size: 22px;
-            }
-            .content-card {
-                padding: 15px;
-            }
-        }
-    </style>
-</head>
-<body>
-<div class="page-container">
-    <div class="page-header">
-        <h1>Manage Users</h1>
-        <p>View and manage registered users.</p>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Manage Users</h2>
+        <p class="text-sm text-slate-500 mt-1">Directory of registered students and campus users.</p>
+      </div>
+      <a href="admin-dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Dashboard</span>
+      </a>
     </div>
 
-    <div class="content-card">
-        ${deleted ? '<div class="success-message">✓ User deleted successfully.</div>' : ''}
+    ${deleted ? `
+      <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold mb-6 flex items-center gap-2 success-message">
+        <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i>
+        <span>User and related notifications deleted successfully.</span>
+      </div>
+    ` : ''}
 
-        <div class="table-wrapper">
-            <table>
-                <thead>
-                    <tr>
-                        <th>User ID</th>
-                        <th>Name</th>
-                        <th>Student ID</th>
-                        <th>Email</th>
-                        <th>Department</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${userRows}
-                </tbody>
-            </table>
+    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden content-card">
+      <div class="px-6 py-4 bg-slate-50/70 border-b border-slate-200/80 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-amber-500"></i>
+          <h3 class="font-bold text-base text-slate-900">Registered Users</h3>
         </div>
+        <span class="text-xs font-semibold text-slate-600 bg-white border border-slate-200 px-3 py-1 rounded-full">
+          Total: ${users.length}
+        </span>
+      </div>
 
-        <div class="bottom-actions">
-            <a href="admin-dashboard.php" class="back-btn">← Back to Dashboard</a>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <th class="py-3 px-4">User ID</th>
+              <th class="py-3 px-4">Full Name</th>
+              <th class="py-3 px-4">Student ID</th>
+              <th class="py-3 px-4">Email</th>
+              <th class="py-3 px-4">Department</th>
+              <th class="py-3 px-4">Joined Date</th>
+              <th class="py-3 px-4">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${userRows}
+          </tbody>
+        </table>
+      </div>
     </div>
-</div>
+  `;
 
-${csrfPostScript(csrfToken)}
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: 'Manage Users',
+    activeNav: 'users',
+    admin_username,
+    content,
+    scripts: csrfPostScript(csrfToken)
+  });
 }
 
 module.exports = { renderManageUsersView };
-

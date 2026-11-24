@@ -1,85 +1,131 @@
 const { escapeHtml } = require('../lib/auth');
+const { renderAdminLayout } = require('./layoutView');
 
-function renderReturnedItemsView({ lostItems = [], foundItems = [] }) {
+function renderReturnedItemsView({ lostItems = [], foundItems = [], admin_username = 'Admin' }) {
   const lostRows = lostItems.length > 0
     ? lostItems.map(row => `
-      <tr>
-        <td>${escapeHtml(row.lost_id)}</td>
-        <td>${escapeHtml(row.item_name)}</td>
-        <td>${escapeHtml(row.category)}</td>
-        <td>${escapeHtml(row.owner_name || 'Unknown')}</td>
-        <td>${escapeHtml(row.status)}</td>
+      <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${escapeHtml(row.lost_id)}</td>
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-sm">${escapeHtml(row.item_name)}</td>
+        <td class="py-3.5 px-4">
+          <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+            ${escapeHtml(row.category)}
+          </span>
+        </td>
+        <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(row.owner_name || 'Unknown')}</td>
+        <td class="py-3.5 px-4 text-xs">
+          <span class="inline-block bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2.5 py-0.5 rounded-full">
+            ${escapeHtml(row.status)}
+          </span>
+        </td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="5" align="center">No returned lost items available</td>
+        <td colspan="5" class="py-6 text-center text-slate-400 text-xs">No returned lost items available</td>
       </tr>
     `;
 
   const foundRows = foundItems.length > 0
     ? foundItems.map(row => `
-      <tr>
-        <td>${escapeHtml(row.found_id)}</td>
-        <td>${escapeHtml(row.item_name)}</td>
-        <td>${escapeHtml(row.category)}</td>
-        <td>${escapeHtml(row.owner_name || 'Unknown')}</td>
-        <td>${escapeHtml(row.status)}</td>
+      <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-xs">#${escapeHtml(row.found_id)}</td>
+        <td class="py-3.5 px-4 font-bold text-slate-900 text-sm">${escapeHtml(row.item_name)}</td>
+        <td class="py-3.5 px-4">
+          <span class="inline-block bg-teal-50 text-teal-700 border border-teal-200 text-xs px-2.5 py-0.5 rounded-full font-semibold">
+            ${escapeHtml(row.category)}
+          </span>
+        </td>
+        <td class="py-3.5 px-4 text-xs text-slate-700 font-semibold">${escapeHtml(row.owner_name || 'Unknown')}</td>
+        <td class="py-3.5 px-4 text-xs">
+          <span class="inline-block bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold px-2.5 py-0.5 rounded-full">
+            ${escapeHtml(row.status)}
+          </span>
+        </td>
       </tr>
     `).join('')
     : `
       <tr>
-        <td colspan="5" align="center">No returned found items available</td>
+        <td colspan="5" class="py-6 text-center text-slate-400 text-xs">No returned found items available</td>
       </tr>
     `;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Returned Items</title>
-    <link rel="stylesheet" href="css/style.css">
-</head>
-<body>
-<div class="container">
-    <h1>Returned Items</h1>
-    <p>Items that have been successfully returned to their owners.</p>
+  const content = `
+    <!-- HEADER -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Returned Items</h2>
+        <p class="text-sm text-slate-500 mt-1">Items that have been successfully returned to their rightful owners.</p>
+      </div>
+      <a href="admin-dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5 btn">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Back to Dashboard</span>
+      </a>
+    </div>
 
-    <!-- RETURNED LOST ITEMS -->
-    <h2>Returned Lost Items</h2>
-    <table border="1" width="100%" cellpadding="10">
-        <tr>
-            <th>ID</th>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Owner Name</th>
-            <th>Status</th>
-        </tr>
-        ${lostRows}
-    </table>
+    <div class="space-y-6 container">
+      <!-- RETURNED LOST ITEMS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            Returned Lost Items
+          </h3>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">${lostItems.length} Resolved</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Owner Name</th>
+                <th class="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lostRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-    <br><br>
+      <!-- RETURNED FOUND ITEMS -->
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+        <div class="px-6 py-4 bg-emerald-50/70 border-b border-emerald-100 flex items-center justify-between">
+          <h3 class="font-bold text-base text-slate-900 flex items-center gap-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            Returned Found Items
+          </h3>
+          <span class="text-xs font-semibold text-emerald-700 bg-emerald-100/70 px-2.5 py-0.5 rounded-full">${foundItems.length} Resolved</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50/60 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th class="py-3 px-4">ID</th>
+                <th class="py-3 px-4">Item Name</th>
+                <th class="py-3 px-4">Category</th>
+                <th class="py-3 px-4">Owner Name</th>
+                <th class="py-3 px-4">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${foundRows}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  `;
 
-    <!-- RETURNED FOUND ITEMS -->
-    <h2>Returned Found Items</h2>
-    <table border="1" width="100%" cellpadding="10">
-        <tr>
-            <th>ID</th>
-            <th>Item Name</th>
-            <th>Category</th>
-            <th>Owner Name</th>
-            <th>Status</th>
-        </tr>
-        ${foundRows}
-    </table>
-
-    <br><br>
-    <a href="admin-dashboard.php" class="btn">Back to Dashboard</a>
-</div>
-</body>
-</html>`;
+  return renderAdminLayout({
+    title: 'Returned Items',
+    activeNav: 'returned',
+    admin_username,
+    content
+  });
 }
 
 module.exports = { renderReturnedItemsView };
-

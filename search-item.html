@@ -1,63 +1,193 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="en">
 <head>
-    <title>Search Item</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Item | Campus Lost & Found</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="dashboard.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/tailwind.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/lucide.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+      body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    </style>
 </head>
+<body class="flex h-screen overflow-hidden bg-slate-50 text-slate-800 antialiased selection:bg-teal-500 selection:text-white">
 
-<body>
+<!-- MOBILE SIDEBAR BACKDROP -->
+<div id="sidebarBackdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden hidden transition-opacity"></div>
 
-<div class="container">
+<!-- SIDEBAR -->
+<aside id="sidebar" class="fixed lg:static inset-y-0 left-0 z-50 w-64 bg-[#003844] text-white flex flex-col justify-between p-5 shrink-0 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out select-none shadow-2xl lg:shadow-none">
+    <div>
+        <div class="flex items-center justify-between mb-8 px-1">
+            <a href="dashboard.php" class="flex items-center gap-3">
+                <img src="images/new-logo.jpeg" alt="CAMPUS LOST & FOUND" class="h-10 w-auto object-contain rounded-xl shadow-sm">
+            </a>
+            <button type="button" onclick="toggleSidebar(false)" class="lg:hidden text-teal-200 hover:text-white p-1 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
 
-    <h1>Search Item</h1>
+        <nav class="space-y-1.5 font-semibold text-sm">
+            <a href="dashboard.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="add-lost-item.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="plus-circle" class="w-4 h-4 shrink-0"></i>
+                <span>Add Lost Item</span>
+            </a>
+            <a href="add-found-item.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="plus-square" class="w-4 h-4 shrink-0"></i>
+                <span>Add Found Item</span>
+            </a>
+            <a href="search-item.html" class="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-[#0fa4af] text-white shadow-md transition">
+                <i data-lucide="search" class="w-4 h-4 shrink-0"></i>
+                <span>Search Item</span>
+            </a>
+            <a href="view-items.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="clipboard-list" class="w-4 h-4 shrink-0"></i>
+                <span>View All Items</span>
+            </a>
+            <a href="my-matches.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="heart" class="w-4 h-4 shrink-0"></i>
+                <span>My Matches</span>
+            </a>
+            <a href="notifications.php" class="flex items-center gap-3.5 px-4 py-3 rounded-xl text-teal-100/75 hover:text-white hover:bg-white/10 transition">
+                <i data-lucide="bell" class="w-4 h-4 shrink-0"></i>
+                <span>Notifications</span>
+            </a>
+        </nav>
+    </div>
 
-    <form action="search-item.php" method="POST">
+    <div class="pt-4 border-t border-teal-800/40 text-center">
+        <a href="logout.php" class="text-xs text-rose-300 hover:text-rose-100 bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/40 px-3.5 py-1.5 rounded-xl transition inline-flex items-center gap-1.5 font-semibold">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</aside>
 
-    <!-- Item Name -->
-    <input type="text" 
-    name="item_name"
-    placeholder="Item Name (Example: Mobile, ID Card, Watch)">
-    <br><br>
+<!-- MAIN CONTENT WRAPPER -->
+<div class="flex-1 flex flex-col h-screen overflow-y-auto">
+    <!-- STICKY TOPBAR -->
+    <header class="bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-5 sm:px-8 py-3.5 flex justify-between items-center sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.03)]">
+        <div class="flex items-center gap-4">
+            <button type="button" onclick="toggleSidebar(true)" class="lg:hidden p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                <h1 class="font-bold text-slate-900 text-base md:text-lg tracking-tight">Search Item</h1>
+            </div>
+        </div>
 
+        <div class="flex items-center gap-3">
+            <a href="view-items.php" class="text-xs text-slate-600 hover:text-slate-900 font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-100 transition">
+                Browse All
+            </a>
+        </div>
+    </header>
 
-    <!-- Category -->
-    <select name="category">
-        <option value="">Select Category</option>
-        <option>Electronics</option>
-        <option>Documents</option>
-        <option>Accessories</option>
-        <option>Books or Stationery</option>
-        <option>Others</option>
-    </select>
+    <main class="flex-1 p-4 sm:p-6 md:p-8 max-w-4xl w-full mx-auto space-y-6">
+        <div class="mb-6">
+            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Search Item</h2>
+            <p class="text-sm text-slate-500 mt-1">Filter across approved lost and found records across campus.</p>
+        </div>
 
-    <br><br>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/90 overflow-hidden">
+            <div class="bg-gradient-to-r from-[#003844] to-[#0fa4af] px-6 py-4 text-white flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-white/10 backdrop-blur-md flex items-center justify-center">
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-base">Search Filter</h3>
+                        <p class="text-xs text-teal-100">Find items by keyword, category, or listing status.</p>
+                    </div>
+                </div>
+            </div>
 
+            <form action="search-item.php" method="POST" class="p-6 md:p-8 space-y-6">
+                <!-- ITEM NAME -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Item Name / Keyword</label>
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                        <input type="text" name="item_name" placeholder="Item Name (Example: Mobile, ID Card, Watch, Calculator)"
+                               class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0fa4af] focus:border-[#0fa4af] text-sm text-slate-800 transition">
+                    </div>
+                </div>
 
-    <!-- Status -->
-    <select name="status">
-        <option value="">Select Status</option>
-        <option value="All">All</option>
-        <option value="Lost">Lost</option>
-        <option value="Found">Found</option>
-    </select>
+                <!-- CATEGORY & STATUS -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Category</label>
+                        <div class="relative">
+                            <i data-lucide="layers" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                            <select name="category" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0fa4af] focus:border-[#0fa4af] text-sm text-slate-800 bg-white transition appearance-none">
+                                <option value="">Select Category (All)</option>
+                                <option>Electronics</option>
+                                <option>Documents</option>
+                                <option>Accessories</option>
+                                <option>Books or Stationery</option>
+                                <option>Others</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+                        </div>
+                    </div>
 
-    <br><br>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Post Status</label>
+                        <div class="relative">
+                            <i data-lucide="filter" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5"></i>
+                            <select name="status" class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0fa4af] focus:border-[#0fa4af] text-sm text-slate-800 bg-white transition appearance-none">
+                                <option value="">Select Status (All)</option>
+                                <option value="All">All</option>
+                                <option value="Lost">Lost Only</option>
+                                <option value="Found">Found Only</option>
+                            </select>
+                            <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
 
-
-    <!-- Search Button -->
-    <button type="submit" name="search">Search</button>
-
-    </form>
-
-
-    <br><br>
-
-    <a href="dashboard.php">Back to Dashboard</a>
-
-
+                <!-- BUTTONS -->
+                <div class="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+                    <a href="dashboard.php" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition">
+                        Back to Dashboard
+                    </a>
+                    <button type="submit" name="search" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-7 py-2.5 rounded-xl font-bold text-sm transition shadow-sm hover:shadow flex items-center gap-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        <span>Search Items</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
 </div>
 
+<script>
+    function toggleSidebar(open) {
+        const sidebar = document.getElementById('sidebar');
+        const backdrop = document.getElementById('sidebarBackdrop');
+        if (open) {
+            sidebar.classList.remove('-translate-x-full');
+            backdrop.classList.remove('hidden');
+        } else {
+            sidebar.classList.add('-translate-x-full');
+            backdrop.classList.add('hidden');
+        }
+    }
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+</script>
 </body>
-
 </html>

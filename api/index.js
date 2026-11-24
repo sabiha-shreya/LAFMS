@@ -436,7 +436,7 @@ app.get(['/dashboard.php', '/dashboard'], requireUser, async (req, res) => {
 
 // Add Lost Item GET
 app.get(['/add-lost-item.php', '/add-lost-item'], requireUser, (req, res) => {
-  res.send(renderAddLostItem());
+  res.send(renderAddLostItem({ full_name: req.session.full_name }));
 });
 
 // Add Lost Item POST
@@ -490,7 +490,7 @@ app.post(['/add-lost-item.php', '/add-lost-item'], requireUser, handleUpload, as
 
 // Add Found Item GET
 app.get(['/add-found-item.php', '/add-found-item'], requireUser, (req, res) => {
-  res.send(renderAddFoundItem());
+  res.send(renderAddFoundItem({ full_name: req.session.full_name }));
 });
 
 // Add Found Item POST
@@ -560,7 +560,13 @@ app.get(['/view-items.php', '/view-items'], async (req, res) => {
       `)
     ]);
 
-    const html = renderViewItems({ type, lost_items, found_items });
+    const html = renderViewItems({
+      type,
+      lost_items,
+      found_items,
+      full_name: req.session?.full_name,
+      is_logged_in: !!req.session?.user_id
+    });
     res.send(html);
   } catch (err) {
     console.error('View items error:', err);
@@ -592,7 +598,13 @@ app.get(['/item-details.php', '/view-post.php'], async (req, res) => {
       return res.status(404).send('Item not found.');
     }
 
-    const html = renderItemDetails({ item, type, from });
+    const html = renderItemDetails({
+      item,
+      type,
+      from,
+      full_name: req.session?.full_name,
+      is_logged_in: !!req.session?.user_id
+    });
     res.send(html);
   } catch (err) {
     console.error('Item details error:', err);
@@ -630,7 +642,12 @@ app.all(['/search-item.php', '/search-item'], async (req, res) => {
       }
     }
 
-    const html = renderSearchResult({ status, result_lost, result_found });
+    const html = renderSearchResult({
+      status,
+      result_lost,
+      result_found,
+      full_name: req.session?.full_name
+    });
     res.send(html);
   } catch (err) {
     console.error('Search error:', err);
@@ -774,7 +791,11 @@ app.get(['/my-matches.php', '/my-matches'], requireUser, async (req, res) => {
       ORDER BY m.match_id DESC
     `, [userId, userId]);
 
-    const html = renderMyMatches({ matches, user_id: userId });
+    const html = renderMyMatches({
+      matches,
+      user_id: userId,
+      full_name: req.session.full_name
+    });
     res.send(html);
   } catch (err) {
     console.error('My matches error:', err);
@@ -966,7 +987,14 @@ app.get(['/view-claim.php', '/view-claim'], requireUser, async (req, res) => {
     }
 
     const csrfToken = getCsrfToken(req);
-    const html = renderViewClaim({ match: matches[0], claim: matches[0], match_id: matchId, currentUserId: req.session.user_id, csrfToken });
+    const html = renderViewClaim({
+      match: matches[0],
+      claim: matches[0],
+      match_id: matchId,
+      currentUserId: req.session.user_id,
+      csrfToken,
+      full_name: req.session.full_name
+    });
     res.send(html);
   } catch (err) {
     console.error('View claim error:', err);
@@ -1141,7 +1169,9 @@ app.get(['/approved-claim-details.php', '/approved-claim-details'], async (req, 
       match_id: matchId,
       is_admin,
       is_owner,
-      is_finder
+      is_finder,
+      full_name: req.session?.full_name,
+      admin_username: req.session?.admin_username
     });
     res.send(html);
   } catch (err) {
@@ -1164,7 +1194,11 @@ app.get(['/notifications.php', '/notifications'], requireUser, async (req, res) 
     `, [userId]);
 
     const unread = notifications.filter(n => n.is_read === 0 || n.is_read === '0').length;
-    const html = renderNotifications({ notifications, unread_count: unread });
+    const html = renderNotifications({
+      notifications,
+      unread_count: unread,
+      full_name: req.session.full_name
+    });
     res.send(html);
   } catch (err) {
     console.error('Notifications error:', err);

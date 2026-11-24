@@ -1,6 +1,7 @@
 const { escapeHtml } = require('../lib/auth');
+const { renderUserLayout } = require('./layoutView');
 
-function renderMyMatches({ matches, user_id }) {
+function renderMyMatches({ matches = [], user_id, full_name = 'Student', unread_count = 0 }) {
   user_id = parseInt(user_id, 10);
 
   const matchCardsHtml = (matches && matches.length > 0) ? matches.map(row => {
@@ -16,7 +17,9 @@ function renderMyMatches({ matches, user_id }) {
 
     // Image for lost item
     const lostImageHtml = row.lost_item_image
-      ? `<div class="lost-item-image"><img src="${escapeHtml(row.lost_item_image)}" alt="Lost Item"></div>`
+      ? `<div class="w-full h-40 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 mb-3.5">
+           <img src="${escapeHtml(row.lost_item_image)}" alt="Lost Item" class="w-full h-full object-cover">
+         </div>`
       : '';
 
     // Action button area
@@ -24,247 +27,308 @@ function renderMyMatches({ matches, user_id }) {
     if (isOwner) {
       if (claimStatus === 'Not Claimed') {
         actionHtml = `
-          <form action="claim-item.php" method="POST" style="display:inline-block;">
+          <form action="claim-item.php" method="POST" class="inline-block">
             <input type="hidden" name="match_id" value="${matchId}">
-            <button type="submit" class="action-button claim-button">📢 Send Claim Request</button>
+            <button type="submit" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-4 py-2 rounded-xl font-bold text-xs transition shadow-sm flex items-center gap-1.5">
+              <i data-lucide="send" class="w-3.5 h-3.5"></i>
+              <span>Send Claim Request</span>
+            </button>
           </form>`;
       } else if (claimStatus === 'Pending') {
-        actionHtml = `<span class="waiting-text">⏳ Claim Request Sent (Waiting for Finder)</span>`;
+        actionHtml = `<span class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+          <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Claim Request Sent (Waiting for Finder)</span>
+        </span>`;
       } else if (claimStatus === 'Rejected') {
-        actionHtml = `<span class="status-badge rejected">✗ Claim Rejected by Finder</span>`;
+        actionHtml = `<span class="inline-flex items-center gap-1.5 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl">
+          <i data-lucide="x-circle" class="w-3.5 h-3.5 text-rose-500"></i>
+          <span>Claim Rejected by Finder</span>
+        </span>`;
       } else if (claimStatus === 'Approved') {
         if (ownerStatus === 'received') {
           actionHtml = `
-            <span class="status-badge approved returned-badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold;">✓ Returned</span>
-            <form action="match-action.php" method="POST" style="display:inline-block;">
-              <input type="hidden" name="match_id" value="${matchId}">
-              <input type="hidden" name="action" value="not_returned">
-              <button type="submit" class="action-button undo-button" style="background:#ef4444;" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
-            </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>✓ Returned</span>
+              </span>
+              <form action="match-action.php" method="POST" class="inline-block">
+                <input type="hidden" name="match_id" value="${matchId}">
+                <input type="hidden" name="action" value="not_returned">
+                <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1" onclick="return confirm('Revert status back to Not Returned Yet?');">
+                  <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+                  <span>↩ Not Returned Yet</span>
+                </button>
+              </form>
+              <a href="approved-claim-details.php?match_id=${matchId}" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1">
+                <span>View Exchange</span>
+              </a>
+            </div>`;
         } else {
           actionHtml = `
-            <form action="match-action.php" method="POST" style="display:inline-block;">
-              <input type="hidden" name="match_id" value="${matchId}">
-              <input type="hidden" name="action" value="received">
-              <button type="submit" class="action-button receive-button" style="background:#16a34a;">📦 Confirm Return</button>
-            </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
+            <div class="flex items-center gap-2 flex-wrap">
+              <form action="match-action.php" method="POST" class="inline-block">
+                <input type="hidden" name="match_id" value="${matchId}">
+                <input type="hidden" name="action" value="received">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                  <i data-lucide="package-check" class="w-3.5 h-3.5"></i>
+                  <span>Confirm Return</span>
+                </button>
+              </form>
+              <a href="approved-claim-details.php?match_id=${matchId}" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-4 py-2 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5">
+                <span>View Exchange Details</span>
+              </a>
+            </div>`;
         }
       }
     } else if (isFinder) {
       if (claimStatus === 'Not Claimed') {
         actionHtml = `
-          <span class="status-badge not-claimed">○ No Claim Request Yet</span>
-          <a href="view-claim.php?match_id=${matchId}" class="action-button" style="background:#2563eb;">👤 View Claimer Data & Secret Info</a>`;
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl font-medium">○ No Claim Request Yet</span>
+            <a href="view-claim.php?match_id=${matchId}" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-4 py-2 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5">
+              <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+              <span>View Claimer Data & Secret Info</span>
+            </a>
+          </div>`;
       } else if (claimStatus === 'Pending') {
         actionHtml = `
-          <span class="status-badge pending">⏳ Claim Request Received!</span>
-          <a href="view-claim.php?match_id=${matchId}" class="action-button claim-button" style="background:#0d9488;">🔍 Review Claim & Secret Info</a>`;
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl">
+              <i data-lucide="bell-ring" class="w-3.5 h-3.5 text-amber-500"></i>
+              <span>Claim Request Received!</span>
+            </span>
+            <a href="view-claim.php?match_id=${matchId}" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm inline-flex items-center gap-1.5">
+              <i data-lucide="search" class="w-3.5 h-3.5"></i>
+              <span>Review Claim & Secret Info</span>
+            </a>
+          </div>`;
       } else if (claimStatus === 'Rejected') {
         actionHtml = `
-          <span class="status-badge rejected">✗ Claim Rejected</span>
-          <a href="view-claim.php?match_id=${matchId}" class="action-button" style="background:#475569;">View Details</a>`;
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl">✗ Claim Rejected</span>
+            <a href="view-claim.php?match_id=${matchId}" class="bg-slate-700 hover:bg-slate-800 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition">View Details</a>
+          </div>`;
       } else if (claimStatus === 'Approved') {
         if (finderStatus === 'give back') {
           actionHtml = `
-            <span class="status-badge approved returned-badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold;">✓ Returned</span>
-            <form action="match-action.php" method="POST" style="display:inline-block;">
-              <input type="hidden" name="match_id" value="${matchId}">
-              <input type="hidden" name="action" value="not_returned">
-              <button type="submit" class="action-button undo-button" style="background:#ef4444;" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
-            </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="inline-flex items-center gap-1.5 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1.5 rounded-xl">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                <span>✓ Returned</span>
+              </span>
+              <form action="match-action.php" method="POST" class="inline-block">
+                <input type="hidden" name="match_id" value="${matchId}">
+                <input type="hidden" name="action" value="not_returned">
+                <button type="submit" class="bg-rose-500 hover:bg-rose-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1" onclick="return confirm('Revert status back to Not Returned Yet?');">
+                  <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+                  <span>↩ Not Returned Yet</span>
+                </button>
+              </form>
+              <a href="approved-claim-details.php?match_id=${matchId}" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold transition inline-flex items-center gap-1">
+                <span>View Exchange</span>
+              </a>
+            </div>`;
         } else {
           actionHtml = `
-            <form action="match-action.php" method="POST" style="display:inline-block;">
-              <input type="hidden" name="match_id" value="${matchId}">
-              <input type="hidden" name="action" value="given_back">
-              <button type="submit" class="action-button give-button" style="background:#16a34a;">🤝 Confirm Return</button>
-            </form>
-            <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
+            <div class="flex items-center gap-2 flex-wrap">
+              <form action="match-action.php" method="POST" class="inline-block">
+                <input type="hidden" name="match_id" value="${matchId}">
+                <input type="hidden" name="action" value="given_back">
+                <button type="submit" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm flex items-center gap-1.5">
+                  <i data-lucide="handshake" class="w-3.5 h-3.5"></i>
+                  <span>Confirm Return</span>
+                </button>
+              </form>
+              <a href="approved-claim-details.php?match_id=${matchId}" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-4 py-2 rounded-xl text-xs font-bold transition inline-flex items-center gap-1.5">
+                <span>View Exchange Details</span>
+              </a>
+            </div>`;
         }
       }
     }
 
     let claimBadge = '';
     if (row.status === 'Returned' || (ownerStatus === 'received' && finderStatus === 'give back')) {
-      claimBadge = `<span class="status-badge approved" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">✓ Returned</span>`;
+      claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 px-3 py-1 rounded-full">✓ Returned</span>`;
     } else if (claimStatus === 'Approved') {
       if (ownerStatus === 'received') {
-        claimBadge = `<span class="status-badge approved" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">📦 Received by Owner</span>`;
+        claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1 rounded-full">📦 Received by Owner</span>`;
       } else if (finderStatus === 'give back') {
-        claimBadge = `<span class="status-badge approved" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">🤝 Given Back by Finder</span>`;
+        claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-teal-50 text-teal-700 border border-teal-200 px-3 py-1 rounded-full">🤝 Given Back by Finder</span>`;
       } else {
-        claimBadge = `<span class="status-badge approved">✓ Claim Approved</span>`;
+        claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">✓ Claim Approved</span>`;
       }
     } else if (claimStatus === 'Not Claimed') {
-      claimBadge = `<span class="status-badge not-claimed">○ Not Claimed</span>`;
+      claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-medium bg-slate-100 text-slate-600 px-3 py-1 rounded-full">○ Not Claimed</span>`;
     } else if (claimStatus === 'Pending') {
-      claimBadge = `<span class="status-badge pending">⏳ Claim Pending</span>`;
+      claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 px-3 py-1 rounded-full">⏳ Claim Pending</span>`;
     } else if (claimStatus === 'Rejected') {
-      claimBadge = `<span class="status-badge rejected">✗ Claim Rejected</span>`;
+      claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 px-3 py-1 rounded-full">✗ Claim Rejected</span>`;
     } else {
-      claimBadge = `<span class="status-badge pending">${escapeHtml(claimStatus)}</span>`;
+      claimBadge = `<span class="inline-flex items-center gap-1 text-xs font-semibold bg-slate-100 text-slate-700 px-3 py-1 rounded-full">${escapeHtml(claimStatus)}</span>`;
     }
 
     const lostName = row.lost_item_name || row.lost_name || 'Lost Item';
     const foundName = row.found_item_name || row.found_name || 'Found Item';
 
     return `
-      <div class="match-card">
-        <div class="match-top">
-          <div class="match-id">
-            Match ID: <strong>#${matchId}</strong>
-            ${isOwner ? '<span class="role-badge owner-role">👤 You are Owner</span>' : ''}
-            ${isFinder ? '<span class="role-badge finder-role">🔎 You are Finder</span>' : ''}
+      <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition overflow-hidden">
+        <!-- MATCH HEADER -->
+        <div class="px-6 py-4 bg-slate-50/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <span class="font-extrabold text-slate-900 text-sm">Match #${matchId}</span>
+            ${isOwner ? '<span class="bg-rose-100 text-rose-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">👤 You are Owner</span>' : ''}
+            ${isFinder ? '<span class="bg-emerald-100 text-emerald-700 text-[11px] font-bold px-2.5 py-0.5 rounded-full">🔎 You are Finder</span>' : ''}
           </div>
-          <div class="match-percentage">
-            ⭐ ${percentage}% Match
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold bg-emerald-500 text-white px-3 py-1 rounded-full shadow-xs flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3 h-3"></i>
+              <span>${percentage}% Match</span>
+            </span>
           </div>
         </div>
 
-        <div class="score-breakdown" style="margin-bottom:18px;background:#f8fafc;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0;font-size:12px;color:#64748b;display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
-          <span style="font-weight:bold;color:#334155;">Match Breakdown:</span>
-          <span><strong>Name (40%):</strong> ${escapeHtml(row.item_name_score || 0)}%</span>
-          <span>•</span>
-          <span><strong>Category (25%):</strong> ${escapeHtml(row.category_score || 0)}%</span>
-          <span>•</span>
-          <span><strong>Location (25%):</strong> ${escapeHtml(row.location_score || 0)}%</span>
-          <span>•</span>
-          <span><strong>Date (10%):</strong> ${escapeHtml(row.date_score || 0)}%</span>
+        <!-- SCORE BREAKDOWN CHIPS -->
+        <div class="px-6 py-3 bg-teal-50/40 border-b border-teal-100/60 flex flex-wrap items-center gap-3 text-xs text-slate-600">
+          <span class="font-bold text-teal-900 flex items-center gap-1">
+            <i data-lucide="sliders" class="w-3.5 h-3.5 text-teal-700"></i>
+            <span>Match Weights:</span>
+          </span>
+          <span class="bg-white px-2 py-0.5 rounded-lg border border-teal-200/80 font-medium text-slate-700">
+            Name (40%): <b>${escapeHtml(row.item_name_score || 0)}%</b>
+          </span>
+          <span class="bg-white px-2 py-0.5 rounded-lg border border-teal-200/80 font-medium text-slate-700">
+            Category (25%): <b>${escapeHtml(row.category_score || 0)}%</b>
+          </span>
+          <span class="bg-white px-2 py-0.5 rounded-lg border border-teal-200/80 font-medium text-slate-700">
+            Location (25%): <b>${escapeHtml(row.location_score || 0)}%</b>
+          </span>
+          <span class="bg-white px-2 py-0.5 rounded-lg border border-teal-200/80 font-medium text-slate-700">
+            Date (10%): <b>${escapeHtml(row.date_score || 0)}%</b>
+          </span>
         </div>
 
-        <div class="items-grid">
-          <!-- LOST ITEM -->
-          <div class="item-box lost-box">
-            <div class="item-label lost-label">🔴 LOST ITEM</div>
-            <h2>${escapeHtml(lostName)}</h2>
-            ${lostImageHtml}
-            <div class="info-row"><span class="info-label">Category:</span> <span class="info-value">${escapeHtml(row.lost_category)}</span></div>
-            <div class="info-row"><span class="info-label">Lost Date:</span> <span class="info-value">${escapeHtml(row.lost_date)}</span></div>
-            <div class="info-row"><span class="info-label">Location:</span> <span class="info-value">${escapeHtml(row.lost_location)}</span></div>
-            
-            <div class="description-card" style="margin-top:12px;padding:12px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;">
-              <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#dc2626;display:block;margin-bottom:4px;">Lost Item Description</span>
-              <p style="margin:0;font-size:13px;color:#1e293b;line-height:1.5;white-space:pre-wrap;">${escapeHtml(row.lost_description || 'No description provided')}</p>
+        <!-- ITEMS SIDE BY SIDE -->
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- LOST ITEM COLUMN -->
+          <div class="bg-rose-50/30 rounded-2xl p-5 border border-rose-100 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-rose-600">LOST ITEM</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 mb-3">${escapeHtml(lostName)}</h3>
+              ${lostImageHtml}
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-rose-100">
+                  <span class="text-slate-500 font-semibold">Category:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.lost_category)}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-rose-100">
+                  <span class="text-slate-500 font-semibold">Date Lost:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.lost_date)}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-rose-100">
+                  <span class="text-slate-500 font-semibold">Location:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.lost_location)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div class="mt-4 pt-3 border-t border-rose-100/80">
+              <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wider block mb-1">Description</span>
+              <p class="text-xs text-slate-700 bg-white p-3 rounded-xl border border-rose-100 leading-relaxed whitespace-pre-wrap">${escapeHtml(row.lost_description || 'No description provided')}</p>
             </div>
           </div>
 
-          <!-- FOUND ITEM -->
-          <div class="item-box found-box">
-            <div class="item-label found-label">🟢 FOUND ITEM</div>
-            <h2>${escapeHtml(foundName)}</h2>
-            <div class="info-row"><span class="info-label">Category:</span> <span class="info-value">${escapeHtml(row.found_category)}</span></div>
-            <div class="info-row"><span class="info-label">Found Date:</span> <span class="info-value">${escapeHtml(row.found_date)}</span></div>
-            <div class="info-row"><span class="info-label">Location:</span> <span class="info-value">${escapeHtml(row.found_location)}</span></div>
-            
-            <div class="description-card" style="margin-top:12px;padding:12px;background:#ffffff;border-radius:10px;border:1px solid #e2e8f0;">
-              <span style="font-size:11px;font-weight:bold;text-transform:uppercase;color:#059669;display:block;margin-bottom:4px;">Found Item Description</span>
-              <p style="margin:0;font-size:13px;color:#1e293b;line-height:1.5;white-space:pre-wrap;">${escapeHtml(row.found_description || 'No description provided')}</p>
+          <!-- FOUND ITEM COLUMN -->
+          <div class="bg-emerald-50/30 rounded-2xl p-5 border border-emerald-100 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <span class="text-[11px] font-extrabold uppercase tracking-wider text-emerald-600">FOUND ITEM</span>
+              </div>
+              <h3 class="text-lg font-bold text-slate-900 mb-3">${escapeHtml(foundName)}</h3>
+              <div class="space-y-2 text-xs">
+                <div class="flex justify-between py-1 border-b border-emerald-100">
+                  <span class="text-slate-500 font-semibold">Category:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.found_category)}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-emerald-100">
+                  <span class="text-slate-500 font-semibold">Date Found:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.found_date)}</span>
+                </div>
+                <div class="flex justify-between py-1 border-b border-emerald-100">
+                  <span class="text-slate-500 font-semibold">Location:</span>
+                  <span class="font-medium text-slate-800">${escapeHtml(row.found_location)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- DESCRIPTION -->
+            <div class="mt-4 pt-3 border-t border-emerald-100/80">
+              <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wider block mb-1">Description</span>
+              <p class="text-xs text-slate-700 bg-white p-3 rounded-xl border border-emerald-100 leading-relaxed whitespace-pre-wrap">${escapeHtml(row.found_description || 'No description provided')}</p>
             </div>
           </div>
         </div>
 
-        <div class="status-area">
-          <div>
-            <div class="claim-status-title">Claim Status</div>
+        <!-- FOOTER ACTIONS -->
+        <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Status:</span>
             ${claimBadge}
           </div>
-          <div class="action-area">
-            <span class="action-title">Action:</span>
+          <div class="flex items-center gap-2 flex-wrap">
             ${actionHtml}
           </div>
         </div>
       </div>
     `;
   }).join('') : `
-    <div class="no-match">
-      <h2>No Matches Found Yet</h2>
-      <p>When our system finds matching lost and found items with >= 80% similarity, they will appear here.</p>
+    <div class="bg-white rounded-2xl border border-slate-200 p-12 text-center shadow-xs">
+      <div class="w-16 h-16 rounded-2xl bg-teal-50 text-[#003844] flex items-center justify-center mx-auto mb-4">
+        <i data-lucide="sparkles" class="w-8 h-8 text-[#0fa4af]"></i>
+      </div>
+      <h3 class="text-lg font-bold text-slate-900 mb-1">No Matches Found Yet</h3>
+      <p class="text-sm text-slate-500 max-w-md mx-auto">
+        When our automated system detects matching lost and found items with <b>80% or higher similarity</b>, they will immediately appear here.
+      </p>
+      <div class="mt-6 flex justify-center gap-3">
+        <a href="add-lost-item.php" class="bg-[#003844] hover:bg-[#0fa4af] text-white px-4 py-2 rounded-xl text-xs font-bold transition">Report Lost Item</a>
+        <a href="view-items.php" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold transition">Browse All Items</a>
+      </div>
     </div>
   `;
 
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Matches - Campus Lost & Found</title>
-<link rel="stylesheet" href="css/style.css">
-<style>
-* { box-sizing: border-box; }
-body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f4f7f9; color: #334155; }
-.matches-container { width: 92%; max-width: 1100px; margin: 35px auto 50px; }
-.matches-header { background: white; padding: 25px 20px; border-radius: 16px; text-align: center; margin-bottom: 25px; border: 1px solid #e5e7eb; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-.matches-header h1 { margin: 0; color: #003844; font-size: 30px; }
-.matches-header p { margin: 8px 0 0; color: #64748b; font-size: 14px; }
-.back-link { display: inline-block; margin-top: 14px; text-decoration: none; color: #0fa4af; font-weight: bold; font-size: 13px; }
-.back-link:hover { text-decoration: underline; }
-.match-card { background: white; border-radius: 16px; margin-bottom: 22px; padding: 22px; border: 1px solid #e2e8f0; box-shadow: 0 4px 18px rgba(0,0,0,0.06); }
-.match-top { display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #edf2f7; }
-.match-id { color: #64748b; font-size: 13px; }
-.match-id strong { color: #334155; }
-.match-percentage { padding: 7px 13px; border-radius: 20px; background: #ecfdf5; color: #047857; font-weight: bold; font-size: 14px; border: 1px solid #a7f3d0; }
-.role-badge { display: inline-block; padding: 5px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; margin-left: 7px; }
-.owner-role { background: #fff1f2; color: #be123c; }
-.finder-role { background: #ecfdf5; color: #15803d; }
-.items-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
-.item-box { padding: 18px; border-radius: 13px; background: #f8fafc; border: 1px solid #e2e8f0; }
-.lost-box { border-top: 3px solid #ef4444; }
-.found-box { border-top: 3px solid #10b981; }
-.item-label { font-size: 11px; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 7px; }
-.lost-label { color: #dc2626; }
-.found-label { color: #059669; }
-.item-box h2 { margin: 0 0 12px; color: #003844; font-size: 19px; }
-.lost-item-image { width: 150px; height: 120px; margin: 0 auto 15px; border-radius: 10px; overflow: hidden; background: #f1f5f9; border: 1px solid #e2e8f0; }
-.lost-item-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.info-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed #e2e8f0; font-size: 13px; }
-.info-label { color: #64748b; font-weight: 600; }
-.info-value { color: #0f172a; text-align: right; max-width: 65%; word-break: break-word; }
-.status-area { display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid #edf2f7; flex-wrap: wrap; gap: 12px; }
-.claim-status-title { font-size: 11px; color: #64748b; margin-bottom: 5px; font-weight: bold; text-transform: uppercase; }
-.status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-.pending { background: #fef3c7; color: #b45309; }
-.approved { background: #dcfce7; color: #15803d; }
-.rejected { background: #fee2e2; color: #b91c1c; }
-.received { background: #eff6ff; color: #2563eb; }
-.not-claimed { background: #f1f5f9; color: #64748b; }
-.action-area { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-.action-title { font-size: 12px; color: #64748b; }
-.action-button { border: none; padding: 9px 15px; border-radius: 8px; color: white; text-decoration: none; font-weight: bold; font-size: 12px; cursor: pointer; transition: 0.2s; }
-.action-button:hover { transform: translateY(-1px); }
-.claim-button { background: #0d9488; }
-.claim-button:hover { background: #0f766e; }
-.receive-button { background: #2563eb; }
-.receive-button:hover { background: #1d4ed8; }
-.give-button { background: #16a34a; }
-.give-button:hover { background: #15803d; }
-.undo-button { background: #ef4444; }
-.undo-button:hover { background: #dc2626; }
-.returned-badge { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
-.waiting-text { color: #64748b; font-weight: bold; font-size: 12px; }
-.no-match { background: white; padding: 50px 20px; text-align: center; border-radius: 16px; border: 1px solid #e2e8f0; }
-.no-match h2 { margin: 0 0 10px; color: #003844; }
-.no-match p { margin: 0; color: #64748b; font-size: 14px; }
-@media (max-width: 768px) {
-    .items-grid { grid-template-columns: 1fr; }
-    .status-area { flex-direction: column; align-items: flex-start; }
-}
-</style>
-</head>
-<body>
-<div class="matches-container">
-    <div class="matches-header">
-        <h1>My Matches</h1>
-        <p>Possible matches found by our system (>= 80% similarity)</p>
-        <a href="dashboard.php" class="back-link">← Back to Dashboard</a>
+  const content = `
+    <!-- HEADER -->
+    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">My Matches</h2>
+        <p class="text-sm text-slate-500 mt-1">High-confidence matches (&ge; 80%) calculated from item name, category, location, and date.</p>
+      </div>
+      <a href="dashboard.php" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl font-semibold transition inline-flex items-center gap-1.5">
+        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Dashboard</span>
+      </a>
     </div>
-    ${matchCardsHtml}
-</div>
-</body>
-</html>`;
+
+    <!-- MATCHES LIST -->
+    <div class="space-y-6">
+      ${matchCardsHtml}
+    </div>
+  `;
+
+  return renderUserLayout({
+    title: 'My Matches',
+    activeNav: 'matches',
+    full_name,
+    unread_count,
+    content
+  });
 }
 
 module.exports = { renderMyMatches };
-
