@@ -62,6 +62,61 @@ function renderApprovedClaimDetails({ match, match_id, is_admin, is_owner, is_fi
         </div>
     </div>
 
+    <!-- RETURN CONFIRMATION & UNDO ACTIONS -->
+    ${(is_owner || is_finder) ? `
+    <div class="bg-white rounded-2xl shadow p-6 mb-6 border border-gray-100">
+        <h2 class="text-xl font-bold mb-3">Item Handover & Return Status</h2>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <p class="text-sm text-gray-600">
+                    Your Status: <strong class="text-gray-900">${is_owner ? (match.owner_status?.toLowerCase() === 'received' ? 'Returned' : 'Pending Confirmation') : (match.finder_status?.toLowerCase() === 'give back' ? 'Returned' : 'Pending Confirmation')}</strong>
+                    &nbsp;|&nbsp;
+                    Handover Status: <strong class="text-gray-900">${match.status === 'Returned' ? '✓ Completed (Returned)' : 'In Progress'}</strong>
+                </p>
+                <p class="text-xs text-gray-400 mt-1">Confirm when the item has physically been handed over. You can undo if clicked accidentally.</p>
+            </div>
+            <div>
+                ${is_owner ? (
+                    match.owner_status?.toLowerCase() === 'received' ? `
+                        <div class="flex items-center gap-3">
+                            <span class="px-4 py-2 bg-green-100 text-green-800 font-bold rounded-xl text-sm border border-green-300">✓ Returned</span>
+                            <form action="match-action.php" method="POST" style="display:inline-block;">
+                                <input type="hidden" name="match_id" value="${match_id}">
+                                <input type="hidden" name="action" value="not_returned">
+                                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow-sm" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
+                            </form>
+                        </div>
+                    ` : `
+                        <form action="match-action.php" method="POST" style="display:inline-block;">
+                            <input type="hidden" name="match_id" value="${match_id}">
+                            <input type="hidden" name="action" value="received">
+                            <button type="submit" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition shadow-sm">📦 Confirm Return</button>
+                        </form>
+                    `
+                ) : ''}
+                ${is_finder ? (
+                    match.finder_status?.toLowerCase() === 'give back' ? `
+                        <div class="flex items-center gap-3">
+                            <span class="px-4 py-2 bg-green-100 text-green-800 font-bold rounded-xl text-sm border border-green-300">✓ Returned</span>
+                            <form action="match-action.php" method="POST" style="display:inline-block;">
+                                <input type="hidden" name="match_id" value="${match_id}">
+                                <input type="hidden" name="action" value="not_returned">
+                                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm transition shadow-sm" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
+                            </form>
+                        </div>
+                    ` : `
+                        <form action="match-action.php" method="POST" style="display:inline-block;">
+                            <input type="hidden" name="match_id" value="${match_id}">
+                            <input type="hidden" name="action" value="given_back">
+                            <button type="submit" class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-sm transition shadow-sm">🤝 Confirm Return</button>
+                        </form>
+                    `
+                ) : ''}
+            </div>
+        </div>
+    </div>
+    ` : ''}
+
     <!-- LOST ITEM -->
     <div class="bg-white rounded-2xl shadow p-6 mb-6">
         <h2 class="text-xl font-bold text-red-600 mb-5">Lost Item</h2>

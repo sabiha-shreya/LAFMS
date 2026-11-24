@@ -872,7 +872,7 @@ app.post(['/match-action.php', '/match-action'], requireUser, async (req, res) =
         `${claimerName} has submitted a claim request for your found item '${match.found_item_name}'. Check their claimer details and secret information to accept or reject.`
       ]);
       return res.send("<script>alert('Claim request sent to the finder! They will review your claim.'); window.location.href='my-matches.php';</script>");
-    } else if (action === 'receive' && match.lost_user_id === userId) {
+    } else if ((action === 'receive' || action === 'received') && match.lost_user_id === userId) {
       let finderStatus = match.finder_status;
       let ownerStatus = 'Received';
       let status = (finderStatus === 'Give Back') ? 'Returned' : match.status;
@@ -881,7 +881,7 @@ app.post(['/match-action.php', '/match-action'], requireUser, async (req, res) =
         await execute('UPDATE lost_items SET status = "Returned" WHERE lost_id = ?', [match.lost_id]);
         await execute('UPDATE found_items SET status = "Returned" WHERE found_id = ?', [match.found_id]);
       }
-    } else if (action === 'give_back' && match.found_user_id === userId) {
+    } else if ((action === 'give_back' || action === 'given_back') && match.found_user_id === userId) {
       let finderStatus = 'Give Back';
       let ownerStatus = match.owner_status;
       let status = (ownerStatus === 'Received') ? 'Returned' : match.status;
@@ -889,6 +889,16 @@ app.post(['/match-action.php', '/match-action'], requireUser, async (req, res) =
       if (status === 'Returned') {
         await execute('UPDATE lost_items SET status = "Returned" WHERE lost_id = ?', [match.lost_id]);
         await execute('UPDATE found_items SET status = "Returned" WHERE found_id = ?', [match.found_id]);
+      }
+    } else if ((action === 'not_returned' || action === 'unreceive' || action === 'ungive_back')) {
+      if (match.lost_user_id === userId) {
+        await execute('UPDATE matches SET owner_status = "Pending", status = "Pending" WHERE match_id = ?', [matchId]);
+        await execute('UPDATE lost_items SET status = "Claim Approved" WHERE lost_id = ?', [match.lost_id]);
+        await execute('UPDATE found_items SET status = "Claim Approved" WHERE found_id = ?', [match.found_id]);
+      } else if (match.found_user_id === userId) {
+        await execute('UPDATE matches SET finder_status = "Pending", status = "Pending" WHERE match_id = ?', [matchId]);
+        await execute('UPDATE lost_items SET status = "Claim Approved" WHERE lost_id = ?', [match.lost_id]);
+        await execute('UPDATE found_items SET status = "Claim Approved" WHERE found_id = ?', [match.found_id]);
       }
     }
 

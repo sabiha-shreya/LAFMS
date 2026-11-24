@@ -35,14 +35,19 @@ function renderMyMatches({ matches, user_id }) {
       } else if (claimStatus === 'Approved') {
         if (ownerStatus === 'received') {
           actionHtml = `
-            <span class="status-badge received">✓ Item Received</span>
+            <span class="status-badge approved returned-badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold;">✓ Returned</span>
+            <form action="match-action.php" method="POST" style="display:inline-block;">
+              <input type="hidden" name="match_id" value="${matchId}">
+              <input type="hidden" name="action" value="not_returned">
+              <button type="submit" class="action-button undo-button" style="background:#ef4444;" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
+            </form>
             <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
         } else {
           actionHtml = `
             <form action="match-action.php" method="POST" style="display:inline-block;">
               <input type="hidden" name="match_id" value="${matchId}">
               <input type="hidden" name="action" value="received">
-              <button type="submit" class="action-button receive-button">📦 Confirm Item Received</button>
+              <button type="submit" class="action-button receive-button" style="background:#16a34a;">📦 Confirm Return</button>
             </form>
             <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
         }
@@ -63,14 +68,19 @@ function renderMyMatches({ matches, user_id }) {
       } else if (claimStatus === 'Approved') {
         if (finderStatus === 'give back') {
           actionHtml = `
-            <span class="status-badge approved">✓ Given Back</span>
+            <span class="status-badge approved returned-badge" style="background:#dcfce7;color:#166534;border:1px solid #86efac;font-weight:bold;">✓ Returned</span>
+            <form action="match-action.php" method="POST" style="display:inline-block;">
+              <input type="hidden" name="match_id" value="${matchId}">
+              <input type="hidden" name="action" value="not_returned">
+              <button type="submit" class="action-button undo-button" style="background:#ef4444;" onclick="return confirm('Revert status back to Not Returned Yet?');">↩ Not Returned Yet</button>
+            </form>
             <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange</a>`;
         } else {
           actionHtml = `
             <form action="match-action.php" method="POST" style="display:inline-block;">
               <input type="hidden" name="match_id" value="${matchId}">
               <input type="hidden" name="action" value="given_back">
-              <button type="submit" class="action-button give-button">🤝 Confirm Given Back</button>
+              <button type="submit" class="action-button give-button" style="background:#16a34a;">🤝 Confirm Return</button>
             </form>
             <a href="approved-claim-details.php?match_id=${matchId}" class="action-button" style="background:#003844;">View Exchange Details</a>`;
         }
@@ -78,12 +88,20 @@ function renderMyMatches({ matches, user_id }) {
     }
 
     let claimBadge = '';
-    if (claimStatus === 'Not Claimed') {
+    if (row.status === 'Returned' || (ownerStatus === 'received' && finderStatus === 'give back')) {
+      claimBadge = `<span class="status-badge approved" style="background:#dcfce7;color:#166534;border:1px solid #86efac;">✓ Returned</span>`;
+    } else if (claimStatus === 'Approved') {
+      if (ownerStatus === 'received') {
+        claimBadge = `<span class="status-badge approved" style="background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe;">📦 Received by Owner</span>`;
+      } else if (finderStatus === 'give back') {
+        claimBadge = `<span class="status-badge approved" style="background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;">🤝 Given Back by Finder</span>`;
+      } else {
+        claimBadge = `<span class="status-badge approved">✓ Claim Approved</span>`;
+      }
+    } else if (claimStatus === 'Not Claimed') {
       claimBadge = `<span class="status-badge not-claimed">○ Not Claimed</span>`;
     } else if (claimStatus === 'Pending') {
       claimBadge = `<span class="status-badge pending">⏳ Claim Pending</span>`;
-    } else if (claimStatus === 'Approved') {
-      claimBadge = `<span class="status-badge approved">✓ Claim Approved</span>`;
     } else if (claimStatus === 'Rejected') {
       claimBadge = `<span class="status-badge rejected">✗ Claim Rejected</span>`;
     } else {
@@ -222,6 +240,9 @@ body { margin: 0; padding: 0; font-family: Arial, sans-serif; background: #f4f7f
 .receive-button:hover { background: #1d4ed8; }
 .give-button { background: #16a34a; }
 .give-button:hover { background: #15803d; }
+.undo-button { background: #ef4444; }
+.undo-button:hover { background: #dc2626; }
+.returned-badge { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
 .waiting-text { color: #64748b; font-weight: bold; font-size: 12px; }
 .no-match { background: white; padding: 50px 20px; text-align: center; border-radius: 16px; border: 1px solid #e2e8f0; }
 .no-match h2 { margin: 0 0 10px; color: #003844; }
